@@ -322,3 +322,43 @@ footer {
         padding: 1rem;
     }
 }
+
+/* Estilos para mensajes de error en formularios */
+.error-message {
+    color: #e74c3c;
+    font-size: 0.9em;
+    margin-top: 0.5rem;
+    display: block;
+    font-weight: 500;
+}
+
+.form-group input.error {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 5px rgba(231, 76, 60, 0.3) !important;
+}
+
+/* Sección de debug */
+.debug-section {
+    margin-top: 2rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+.btn-debug {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 0.5rem;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.btn-debug:hover {
+    background-color: #2980b9;
+}
