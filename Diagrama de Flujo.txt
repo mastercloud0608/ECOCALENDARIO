@@ -1,0 +1,151 @@
+Algoritmo EcoCalendario
+    // ———————————————————————————
+    // Variables
+    // ———————————————————————————
+    Definir opcion, i, totalNoticias Como Entero
+    Definir nombre, apellido, correo, contrasena, confirmarContrasena Como Cadena
+    Definir origen, destino Como Cadena
+    Definir rutaCalculada Como Logico
+    Definir paradasIntermedias, noticiasTitulos, noticiasDescripciones Como Cadena
+
+    // ———————————————————————————
+    // Dimensionar vectores
+    // ———————————————————————————
+    Dimension paradasIntermedias[5]
+    Dimension noticiasTitulos[100]
+    Dimension noticiasDescripciones[100]
+
+    // ———————————————————————————
+    // Inicialización
+    // ———————————————————————————
+    totalNoticias <- 3
+    
+    // Inicializar algunas noticias de ejemplo
+    noticiasTitulos[1] <- "Nueva campaña de reciclaje"
+    noticiasDescripciones[1] <- "Inicia programa de reciclaje en toda la ciudad"
+    noticiasTitulos[2] <- "Horarios especiales"
+    noticiasDescripciones[2] <- "Nuevos horarios de recolección los fines de semana"
+    noticiasTitulos[3] <- "Punto de reciclaje"
+    noticiasDescripciones[3] <- "Nuevo punto de reciclaje inaugurado en el centro"
+
+    // ———————————————————————————
+    // Bucle principal
+    // ———————————————————————————
+    Repetir
+        Escribir ""
+        Escribir "--- EcoCalendario ---"
+        Escribir "1. Registrarse"
+        Escribir "2. Ver calendario"
+        Escribir "3. Ver noticias"
+        Escribir "4. Ver ubicacion y ruta"
+        Escribir "5. Salir"
+        Escribir "Seleccione una opcion: "
+        Leer opcion
+
+        Segun opcion Hacer
+
+            Caso 1:
+                Escribir ""
+                Escribir "-- Registro de usuario --"
+                Escribir "Nombre: "
+                Leer nombre
+                Escribir "Apellido: "
+                Leer apellido
+                Escribir "Correo electronico: "
+                Leer correo
+                Escribir "Contrasena: "
+                Leer contrasena
+                Escribir "Confirmar contrasena: "
+                Leer confirmarContrasena
+                Si contrasena = confirmarContrasena Entonces
+                    Escribir "Cuenta creada exitosamente."
+                Sino
+                    Escribir "Error: las contrasenas no coinciden."
+                FinSi
+
+            Caso 2:
+                Escribir ""
+                Escribir "-- Calendario de recoleccion --"
+                Escribir "--- Calendario de Recolección ---"
+                Escribir "Lun | Mar | Mie | Jue | Vie | Sab | Dom"
+                Escribir "----+-----+-----+-----+-----+-----+----"
+                Escribir " 1  |  2  |  3  |  4  |  5  |  6  |  7 "
+                Escribir " 8  |  9  | 10  | 11  | 12  | 13  | 14 "
+                Escribir "15  | 16  | 17  | 18  | 19  | 20  | 21 "
+                Escribir "22  | 23  | 24  | 25  | 26  | 27  | 28 "
+                Escribir "29  | 30  | 31  |     |     |     |    "
+                Escribir ""
+                Escribir "Consejos de reciclaje:"
+                Escribir "- Separa los materiales reciclables por tipo"
+                Escribir "- Limpia los envases antes de reciclar"
+                Escribir "- No mezcles vidrio roto con otros vidrios"
+                Escribir "- El papel debe estar limpio y seco"
+                Escribir ""
+                Escribir "Presione ENTER para continuar..."
+                Leer nombre
+
+            Caso 3:
+                Escribir ""
+                Escribir "-- Noticias disponibles --"
+                Si totalNoticias > 0 Entonces
+                    i <- 1
+                    Mientras i <= totalNoticias Hacer
+                        Escribir "Noticia ", i, ":"
+                        Escribir "Titulo: ", noticiasTitulos[i]
+                        Escribir "Descripcion: ", noticiasDescripciones[i]
+                        Escribir "------------------------"
+                        i <- i + 1
+                    FinMientras
+                Sino
+                    Escribir "No hay noticias para mostrar."
+                FinSi
+                Escribir ""
+                Escribir "Presione ENTER para continuar..."
+                Leer nombre
+
+            Caso 4:
+                Escribir ""
+                Escribir "-- Ubicacion y ruta --"
+                Escribir "Origen: "
+                Leer origen
+                Escribir "Destino: "
+                Leer destino
+                Para i <- 1 Hasta 5 Con Paso 1 Hacer
+                    Escribir "Parada intermedia ", i, ": "
+                    Leer paradasIntermedias[i]
+                FinPara
+                
+                // Calcular ruta
+                Si origen <> "" Y destino <> "" Entonces
+                    rutaCalculada <- Verdadero
+                Sino
+                    rutaCalculada <- Falso
+                FinSi
+                
+                Si rutaCalculada Entonces
+                    Escribir "--- Ruta Calculada ---"
+                    Escribir "La ruta ha sido calculada exitosamente"
+                    Escribir "Tiempo estimado: 15-20 minutos"
+                    Escribir "Distancia aproximada: 3.5 km"
+                Sino
+                    Escribir "No se pudo calcular la ruta."
+                FinSi
+                Escribir ""
+                Escribir "Info barrios y horarios:"
+                Escribir "--- Información de Barrios y Horarios ---"
+                Escribir "Centro: Lunes y Jueves - 8:00 AM"
+                Escribir "Norte: Martes y Viernes - 9:00 AM"
+                Escribir "Sur: Miércoles y Sábados - 7:00 AM"
+                Escribir "Este: Martes y Jueves - 10:00 AM"
+
+            Caso 5:
+                Escribir "Gracias por usar EcoCalendario. ¡Hasta luego!"
+
+            De Otro Modo:
+                Escribir "Opcion no valida. Intente de nuevo."
+
+        FinSegun
+
+    Hasta Que opcion = 5
+
+FinAlgoritmo

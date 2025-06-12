@@ -7,61 +7,61 @@
     <title>Ubicación en Tiempo Real</title>
     <link rel="stylesheet" href="assets/css/style.css">
 
-    <!-- Incluir el script de Google Maps API de manera eficiente -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDt2G5HPANRdS6FRi-0jdlikDeG11Vw5RU&callback=initMap" 
-            async defer></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+
+    <!-- Leaflet JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
     <script>
         let map;
-        let directionsService;
-        let directionsRenderer;
 
         function initMap() {
-            // Crear el mapa centrado en un punto medio de los barrios (Santa Cruz de la Sierra)
-            const initialLocation = { lat: -17.7850, lng: -63.1737 }; // Coordenadas aproximadas del centro
+            // Inicializar el mapa centrado en Santa Cruz de la Sierra
+            map = L.map('mapa-ubicacion').setView([-17.7850, -63.1737], 13);
 
-            map = new google.maps.Map(document.getElementById("mapa-ubicacion"), {
-                zoom: 13,
-                center: initialLocation
-            });
+            // Agregar capa de OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-            // Crear el servicio de direcciones
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer();
-            directionsRenderer.setMap(map);
+            // Coordenadas de la ruta (las mismas que tenías)
+            const start = [-17.770539633794648, -63.20992613361338]; // Inicio
+            const middle1 = [-17.772068557215775, -63.20394188927357]; // Intermedio 1
+            const middle2 = [-17.777305289438623, -63.205537769465565]; // Intermedio 2
+            const end = [-17.777448567255117, -63.21572145849559]; // Final
 
-            // Coordenadas de la ruta
-            const start = { lat: -17.770539633794648, lng: -63.20992613361338 }; // Inicio
-            const middle1 = { lat: -17.772068557215775, lng: -63.20394188927357 }; // Intermedio 1
-            const middle2 = { lat: -17.777305289438623, lng: -63.205537769465565 }; // Intermedio 2
-            const end = { lat: -17.777448567255117, lng: -63.21572145849559 }; // Final
+            const routeCoordinates = [start, middle1, middle2, end];
 
-            // Solicitar la ruta
-            const request = {
-                origin: start,
-                destination: end,
-                waypoints: [
-                    {
-                        location: middle1,
-                        stopover: true
-                    },
-                    {
-                        location: middle2,
-                        stopover: true
-                    }
-                ],
-                travelMode: google.maps.TravelMode.DRIVING
-            };
+            // Crear la línea de ruta
+            const routeLine = L.polyline(routeCoordinates, {
+                color: 'red',
+                weight: 4,
+                opacity: 0.8
+            }).addTo(map);
 
-            // Mostrar la ruta en el mapa
-            directionsService.route(request, function(result, status) {
-                if (status === google.maps.DirectionsStatus.OK) {
-                    directionsRenderer.setDirections(result);
-                } else {
-                    alert('No se pudo trazar la ruta');
-                }
-            });
+            // Ajustar la vista para mostrar toda la ruta
+            map.fitBounds(routeLine.getBounds());
+
+            // Agregar marcadores en cada punto
+            L.marker(start).addTo(map)
+                .bindPopup('<b>Inicio</b><br>Barrio Los Chinos')
+                .openPopup();
+
+            L.marker(middle1).addTo(map)
+                .bindPopup('<b>Punto Intermedio 1</b><br>Zona de recolección');
+
+            L.marker(middle2).addTo(map)
+                .bindPopup('<b>Punto Intermedio 2</b><br>La Costanera');
+
+            L.marker(end).addTo(map)
+                .bindPopup('<b>Destino Final</b><br>La Busch');
         }
+
+        // Inicializar el mapa cuando se carga la página
+        window.onload = function() {
+            initMap();
+        };
     </script>
 </head>
 
