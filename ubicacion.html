@@ -1,99 +1,105 @@
-<!DOCTYPE html>
-<html lang="es">
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ubicación en Tiempo Real</title>
+        <link rel="stylesheet" href="assets/css/style.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    </head>
+    <body>
+        <header>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="calendario.html">Calendario</a></li>
+                    <li><a href="noticias.html">Noticias</a></li>
+                    <li><a href="denuncias.html">Denuncias</a></li>
+                </ul>
+            </nav>
+        </header>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ubicación en Tiempo Real</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+        <main>
+            <section class="welcome-section">
+                <h2>Ubicación en Tiempo Real</h2>
+                <p>Visualiza la ubicación en tiempo real de los camiones de recolección de basura en los barrios de Santa Cruz de la Sierra: Los Chinos, La Costanera y La Busch.</p>
+                <div id="mapa-ubicacion" style="width: 100%; height: 400px; border-radius: 8px;"></div>
+            </section>
+        </main>
 
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
-
-    <!-- Leaflet JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-
+        <footer>
+            <div class="footer-content">
+                <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
+            </div>
+        </footer>
     <script>
         let map;
+        let camionMarker;
 
         function initMap() {
-            // Inicializar el mapa centrado en Santa Cruz de la Sierra
             map = L.map('mapa-ubicacion').setView([-17.7850, -63.1737], 13);
 
-            // Agregar capa de OpenStreetMap
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
 
-            // Coordenadas de la ruta (las mismas que tenías)
-            const start = [-17.770539633794648, -63.20992613361338]; // Inicio
-            const middle1 = [-17.772068557215775, -63.20394188927357]; // Intermedio 1
-            const middle2 = [-17.777305289438623, -63.205537769465565]; // Intermedio 2
-            const end = [-17.777448567255117, -63.21572145849559]; // Final
+            const ruta = [
+                [-17.770539633794648, -63.20992613361338],
+                [-17.772068557215775, -63.20394188927357],
+                [-17.777305289438623, -63.205537769465565],
+                [-17.777448567255117, -63.21572145849559]
+            ];
 
-            const routeCoordinates = [start, middle1, middle2, end];
+            L.polyline(ruta, { color: 'red', weight: 4, opacity: 0.8 }).addTo(map);
+            ruta.forEach((coord, i) => {
+                L.marker(coord).addTo(map).bindPopup(`Punto ${i + 1}`);
+            });
 
-            // Crear la línea de ruta
-            const routeLine = L.polyline(routeCoordinates, {
-                color: 'red',
-                weight: 4,
-                opacity: 0.8
-            }).addTo(map);
+            map.fitBounds(L.polyline(ruta).getBounds());
 
-            // Ajustar la vista para mostrar toda la ruta
-            map.fitBounds(routeLine.getBounds());
+            // ⏱ Revisar ubicación del camionero cada 1 segundo
+            setInterval(() => {
+                const isActive = localStorage.getItem('ubicacionActiva') === 'true';
+                const raw = localStorage.getItem('camioneroUbicacion');
 
-            // Agregar marcadores en cada punto
-            L.marker(start).addTo(map)
-                .bindPopup('<b>Inicio</b><br>Barrio Los Chinos')
-                .openPopup();
+                console.log("Lectura localStorage:", {
+    activo: localStorage.getItem('ubicacionActiva'),
+    ubicacion: localStorage.getItem('camioneroUbicacion')
+});
 
-            L.marker(middle1).addTo(map)
-                .bindPopup('<b>Punto Intermedio 1</b><br>Zona de recolección');
 
-            L.marker(middle2).addTo(map)
-                .bindPopup('<b>Punto Intermedio 2</b><br>La Costanera');
+                if (!isActive || !raw) {
+                    if (camionMarker) {
+                        map.removeLayer(camionMarker);
+                        camionMarker = null;
+                    }
+                    return;
+                }
 
-            L.marker(end).addTo(map)
-                .bindPopup('<b>Destino Final</b><br>La Busch');
+                try {
+                    const { lat, lng } = JSON.parse(raw);
+                    if (!lat || !lng) return;
+
+                    const pos = [lat, lng];
+
+                    if (!camionMarker) {
+                        camionMarker = L.marker(pos, {
+                            icon: L.icon({
+                                iconUrl: 'assets/images/camion.png',
+                                iconSize: [25, 25],
+                                iconAnchor: [12, 25]
+                            })
+                        }).addTo(map).bindPopup("Camionero en ruta").openPopup();
+                    } else {
+                        camionMarker.setLatLng(pos);
+                    }
+
+                } catch (e) {
+                    console.warn("Error leyendo ubicación del camionero:", e.message);
+                }
+            }, 1000);
         }
 
-        // Inicializar el mapa cuando se carga la página
-        window.onload = function() {
-            initMap();
-        };
+        window.onload = initMap;
     </script>
-</head>
-
-<body>
-    <!-- Encabezado con navegación -->
-    <header>
-        <nav>
-            <ul>
-                <li><a href="index.html">Inicio</a></li>
-                <li><a href="registrar.html">Registro</a></li>
-                <li><a href="calendario.html">Calendario</a></li>
-                <li><a href="noticias.html">Noticias</a></li>
-                <li><a href="denuncias.html">Denuncias</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <main>
-        <section class="welcome-section">
-            <h2>Ubicación en Tiempo Real</h2>
-            <p>Visualiza la ubicación en tiempo real de los camiones de recolección de basura en los barrios de Santa Cruz de la Sierra: Los Chinos, La Costanera y La Busch.</p>
-
-            <!-- Aquí se cargará el mapa -->
-            <div id="mapa-ubicacion" style="width: 100%; height: 400px; border-radius: 8px;"></div>
-        </section>
-    </main>
-
-    <footer>
-        <div class="footer-content">
-            <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
-        </div>
-    </footer>
-</body>
-
-</html>
