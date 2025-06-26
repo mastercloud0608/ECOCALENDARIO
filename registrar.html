@@ -1,212 +1,61 @@
-<!-- registrar.html-->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Usuario</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    
-    <script>
-        let usuarios = []; // Array para almacenar usuarios registrados
-
-        function validarFormulario(event) {
-            event.preventDefault(); // Prevenir el envío del formulario por defecto
-
-            // Obtener valores del formulario
-            const nombre = document.getElementById('nombre').value.trim();
-            const correo = document.getElementById('correo').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-
-            // Limpiar mensajes de error previos
-            limpiarErrores();
-
-            let esValido = true;
-
-            // Validar nombre
-            if (nombre.length < 2) {
-                mostrarError('nombre', 'El nombre debe tener al menos 2 caracteres');
-                esValido = false;
-            }
-
-            // Validar correo
-            const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!regexCorreo.test(correo)) {
-                mostrarError('correo', 'Ingresa un correo electrónico válido');
-                esValido = false;
-            }
-
-            // Verificar si el correo ya está registrado
-            if (usuarios.some(usuario => usuario.correo === correo)) {
-                mostrarError('correo', 'Este correo ya está registrado');
-                esValido = false;
-            }
-
-            // Validar contraseña
-            if (password.length < 8) {
-                mostrarError('password', 'La contraseña debe tener al menos 8 caracteres');
-                esValido = false;
-            }
-
-            // Validar que las contraseñas coincidan
-            if (password !== confirmPassword) {
-                mostrarError('confirm-password', 'Las contraseñas no coinciden');
-                esValido = false;
-            }
-
-            // Si todo es válido, registrar el usuario
-            if (esValido) {
-                registrarUsuario(nombre, correo, password);
-            }
-
-            return false;
-        }
-
-        function mostrarError(campo, mensaje) {
-            const input = document.getElementById(campo);
-            const formGroup = input.parentElement;
-            
-            // Crear elemento de error si no existe
-            let errorElement = formGroup.querySelector('.error-message');
-            if (!errorElement) {
-                errorElement = document.createElement('span');
-                errorElement.className = 'error-message';
-                errorElement.style.color = 'red';
-                errorElement.style.fontSize = '0.9em';
-                errorElement.style.display = 'block';
-                errorElement.style.marginTop = '0.5rem';
-                formGroup.appendChild(errorElement);
-            }
-            
-            errorElement.textContent = mensaje;
-            input.style.borderColor = 'red';
-        }
-
-        function limpiarErrores() {
-            // Remover todos los mensajes de error
-            const errorMessages = document.querySelectorAll('.error-message');
-            errorMessages.forEach(error => error.remove());
-            
-            // Remover estilos de error de los inputs
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
-                input.style.borderColor = '';
-            });
-        }
-
-        function registrarUsuario(nombre, correo, password) {
-            // Crear objeto usuario
-            const nuevoUsuario = {
-                id: Date.now(),
-                nombre: nombre,
-                correo: correo,
-                password: password,
-                fechaRegistro: new Date().toLocaleString()
-            };
-
-            // Agregar usuario al array
-            usuarios.push(nuevoUsuario);
-
-            // Mostrar mensaje de éxito
-            alert('¡Registro exitoso! Bienvenido/a, ' + nombre);
-
-            // Limpiar el formulario
-            document.getElementById('registro-form').reset();
-
-            // Mostrar usuarios registrados en consola
-            console.log('Usuarios registrados:', usuarios);
-        }
-
-        function mostrarUsuariosRegistrados() {
-            if (usuarios.length === 0) {
-                alert('No hay usuarios registrados aún.');
-                return;
-            }
-
-            let listaUsuarios = 'Usuarios Registrados:\n\n';
-            usuarios.forEach((usuario, index) => {
-                listaUsuarios += `${index + 1}. ${usuario.nombre}\n`;
-                listaUsuarios += `   Email: ${usuario.correo}\n`;
-                listaUsuarios += `   Fecha: ${usuario.fechaRegistro}\n\n`;
-            });
-
-            alert(listaUsuarios);
-        }
-
-        // Agregar validación en tiempo real
-        function validarEnTiempoReal() {
-            const inputs = document.querySelectorAll('input');
-            inputs.forEach(input => {
-                input.addEventListener('input', function() {
-                    // Remover error cuando el usuario empiece a corregir
-                    this.style.borderColor = '';
-                    const errorMessage = this.parentElement.querySelector('.error-message');
-                    if (errorMessage) {
-                        errorMessage.remove();
-                    }
-                });
-            });
-        }
-
-        // Inicializar cuando se carga la página
-        window.onload = function() {
-            const form = document.getElementById('registro-form');
-            form.addEventListener('submit', validarFormulario);
-            validarEnTiempoReal();
-        };
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Usuario</title>
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="index.html">Inicio</a></li>
-                <li><a href="calendario.html">Calendario</a></li>
-                <li><a href="noticias.html">Noticias</a></li>
-                <li><a href="ubicacion.html">Ubicación</a></li>
-                <li><a href="denuncias.html">Denuncias</a></li>
-            </ul>
-        </nav>
-    </header>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="calendario.html">Calendario</a></li>
+        <li><a href="noticias.html">Noticias</a></li>
+        <li><a href="ubicacion.html">Ubicación</a></li>
+        <li><a href="denuncias.html">Denuncias</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <main>
-        <div class="form-container">
-            <h2>Registro de Usuario</h2>
-            <form id="registro-form">
-                <div class="form-group">
-                    <label for="nombre">Nombre Completo</label>
-                    <input type="text" id="nombre" name="nombre" required placeholder="Ingresa tu nombre completo">
-                </div>
-
-                <div class="form-group">
-                    <label for="correo">Correo Electrónico</label>
-                    <input type="email" id="correo" name="correo" required placeholder="ejemplo@correo.com">
-                </div>
-
-                <div class="form-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" name="password" required placeholder="Mínimo 8 caracteres" minlength="8">
-                </div>
-
-                <div class="form-group">
-                    <label for="confirm-password">Confirmar Contraseña</label>
-                    <input type="password" id="confirm-password" name="confirm-password" required placeholder="Repite tu contraseña">
-                </div>
-
-                <button type="submit" class="btn-submit">Crear Cuenta</button>
-            </form>
-
-            <div>
-                <p><strong>Para propósitos de demostración:</strong></p>
-                <button type="button" onclick="mostrarUsuariosRegistrados()">Ver Usuarios Registrados</button>
-            </div>
+  <main>
+    <div class="form-container">
+      <h2>Registro de Usuario</h2>
+      <form id="registro-form">
+        <div class="form-group">
+          <label for="nombre">Nombre Completo</label>
+          <input type="text" id="nombre" name="nombre" required placeholder="Ingresa tu nombre completo">
         </div>
-    </main>
 
-    <footer>
-        <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
-    </footer>
+        <div class="form-group">
+          <label for="correo">Correo Electrónico</label>
+          <input type="email" id="correo" name="correo" required placeholder="ejemplo@correo.com">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" name="password" required placeholder="Mínimo 8 caracteres">
+        </div>
+
+        <div class="form-group">
+          <label for="confirm-password">Confirmar Contraseña</label>
+          <input type="password" id="confirm-password" name="confirm-password" required placeholder="Repite tu contraseña">
+        </div>
+
+        <button type="submit" class="btn-submit">Crear Cuenta</button>
+      </form>
+
+      <div>
+        <button type="button" onclick="mostrarUsuariosRegistrados()">Ver Usuarios Registrados</button>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
+  </footer>
+
+  <script src="services/registrar.js"></script>
 </body>
 </html>

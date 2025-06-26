@@ -246,44 +246,11 @@ main > p {
     background-color: #219a52;
 }
 
-/* Sección de bienvenida */
-.welcome-section {
-    padding: 1rem 0;
+.btn-submit.logout {
+    margin-top: 1rem;
 }
 
-.welcome-section h2 {
-    color: #2c3e50;
-    margin-bottom: 1rem;
-}
-
-.welcome-section p {
-    color: #666;
-    margin-bottom: 1.5rem;
-}
-
-/* Mapa */
-#mapa-ubicacion {
-    border-radius: 8px !important;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    border: 2px solid #27ae60;
-}
-
-/* Footer */
-footer {
-    background-color: #2c3e50;
-    color: white;
-    text-align: center;
-    padding: 1.5rem 0;
-    margin-top: 2rem;
-}
-
-.footer-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 2rem;
-}
-
-/* Botones extra */
+/* Seguimiento y botones */
 .btn-toggle-ubicacion,
 .btn-debug {
     padding: 1rem;
@@ -315,14 +282,57 @@ footer {
     background-color: #2980b9;
 }
 
-/* Sección de debug */
-.debug-section {
+/* Denuncias */
+.form-denuncia {
     margin-top: 2rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.form-denuncia input[type="text"],
+.form-denuncia textarea {
+    flex: 1 1 100%;
+    padding: 0.8rem;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.form-denuncia button {
+    padding: 0.8rem 1.5rem;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.form-denuncia button:hover {
+    background-color: #219a52;
+}
+
+/* Mapa */
+#mapa-ubicacion {
+    border-radius: 8px !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 2px solid #27ae60;
+}
+
+/* Mensaje */
+.mensaje-recoleccion {
+    margin-top: 1.5rem;
     padding: 1rem;
-    background-color: #f8f9fa;
+    background-color: #e8f5e8;
+    border-left: 5px solid #27ae60;
     border-radius: 8px;
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 1.1rem;
     text-align: center;
-    border: 1px solid #ddd;
 }
 
 /* Banner público */
@@ -339,16 +349,28 @@ footer {
     text-decoration: underline;
 }
 
-.mensaje-recoleccion {
-    margin-top: 1.5rem;
-    padding: 1rem;
-    background-color: #e8f5e8;
-    border-left: 5px solid #27ae60;
-    border-radius: 8px;
-    font-weight: 500;
-    color: #2c3e50;
+/* Usuario */
+.usuario-bienvenida {
+    color: #f1f1f1;
+    font-weight: bold;
     font-size: 1.1rem;
+    margin: 0.5rem auto;
     text-align: center;
+}
+
+/* Footer */
+footer {
+    background-color: #2c3e50;
+    color: white;
+    text-align: center;
+    padding: 1.5rem 0;
+    margin-top: 2rem;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
 }
 
 /* Responsive */
@@ -403,4 +425,27 @@ footer {
     .noticia {
         padding: 1rem;
     }
+}
+
+#user-info {
+    color: #f1f1f1;
+    font-weight: 500;
+    text-align: center;
+    margin-top: 1rem;
+}
+
+#user-info button {
+    background-color: #27ae60;
+    border: none;
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    transition: background-color 0.3s ease;
+}
+
+#user-info button:hover {
+    background-color: #219a52;
 }

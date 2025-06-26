@@ -25,18 +25,45 @@ window.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // iOS requiere getCurrentPosition activado desde interacción del usuario
         navigator.geolocation.getCurrentPosition(pos => {
             console.log("Permiso de ubicación concedido.");
             iniciarSeguimiento();
         }, err => {
-            alert("No se pudo obtener tu ubicación. Verifica los permisos del navegador.");
-            console.error("Permiso denegado:", err.message);
+            console.warn("Permiso denegado o error:", err.message);
+
+            const deseaAyuda = confirm(
+                "⚠️ No se pudo obtener tu ubicación. Esto puede deberse a que:\n\n" +
+                "- No diste permisos al navegador\n" +
+                "- La ubicación está desactivada\n\n" +
+                "¿Deseas ver cómo activarla?"
+            );
+
+            if (deseaAyuda) {
+                mostrarGuiaActivacion();
+            }
         }, {
             enableHighAccuracy: true,
             timeout: 7000,
             maximumAge: 0
         });
+    }
+
+    function mostrarGuiaActivacion() {
+        const esIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const guia = esIOS
+            ? "🔧 iPhone (Safari o Chrome):\n\n" +
+              "1. Abrí Ajustes del iPhone.\n" +
+              "2. Buscá 'Chrome' o 'Safari'.\n" +
+              "3. Entrá en 'Ubicación'.\n" +
+              "4. Elegí 'Al usar la app' o 'Siempre'.\n\n" +
+              "Luego volvé aquí y tocá nuevamente 'Activar Ubicación'."
+            : "🔧 Android o PC:\n\n" +
+              "1. Asegurate de que la ubicación esté activada.\n" +
+              "2. Verificá que el navegador tenga permisos para acceder.\n" +
+              "3. Tocá el candado 🔒 en la barra de direcciones y permití 'Ubicación'.\n\n" +
+              "Luego recargá la página o tocá nuevamente 'Activar Ubicación'.";
+
+        alert(guia);
     }
 
     function iniciarSeguimiento() {
@@ -61,7 +88,6 @@ window.addEventListener('DOMContentLoaded', () => {
             };
 
             const anterior = JSON.parse(localStorage.getItem('camioneroUbicacion') || '{}');
-
             const moved = !anterior.lat || Math.abs(anterior.lat - latitude) > 0.00005 || Math.abs(anterior.lng - longitude) > 0.00005;
 
             if (moved) {
@@ -70,7 +96,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
 
         }, error => {
-            console.error("Error obteniendo ubicación:", error.message);
+            console.error("Error durante seguimiento:", error.message);
         }, {
             enableHighAccuracy: true,
             maximumAge: 0,
