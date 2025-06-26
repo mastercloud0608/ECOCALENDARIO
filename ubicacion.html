@@ -15,12 +15,11 @@
 
   <!-- Leaflet JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-
-  <!-- Firebase SDK (compat) -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-database-compat.js"></script>
   <script>
-    // Misma configuración de Firebase
+    // Config Firebase (igual que en camionero.html)
     const firebaseConfig = {
       apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
       authDomain: "ecocalendario-51a84.firebaseapp.com",
@@ -32,7 +31,7 @@
       measurementId: "G-VXCZYN6WNC"
     };
     firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const db = firebase.database();
   </script>
 </head>
 <body>
@@ -51,118 +50,119 @@
     <section class="welcome-section">
       <h2>Ubicación en Tiempo Real</h2>
       <p>
-        Visualiza la ubicación en tiempo real de los camiones de recolección de basura
-        en los barrios de Santa Cruz de la Sierra: Los Chinos, La Costanera y La Busch.
+        Visualiza en vivo la posición del camión de basura.
       </p>
       <div id="mapa-ubicacion"></div>
     </section>
   </main>
 
   <footer>
-    <div class="footer-content">
-      <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
-    </div>
+    <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
   </footer>
 
   <script>
-    // Puntos de la ruta fija
+    // puntos de la ruta (opcional, para fondo de mapa)
     const ruta = [
-      [-17.770539633794648, -63.20992613361338],
-      [-17.772068557215775, -63.20394188927357],
-      [-17.777305289438623, -63.205537769465565],
-      [-17.777448567255117, -63.21572145849559]
+      [-17.7705396, -63.2099261],
+      [-17.7720686, -63.2039419],
+      [-17.7773053, -63.2055378],
+      [-17.7774486, -63.2157215]
     ];
 
     function calcularDistancia(lat1, lon1, lat2, lon2) {
-      const R = 6371000; // metros
-      const toRad = x => x * Math.PI / 180;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) ** 2;
-      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const R = 6371000;
+      const toRad = x => x * Math.PI/180;
+      const dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1);
+      const a = Math.sin(dLat/2)**2
+              + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))
+              * Math.sin(dLon/2)**2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    function mostrarNotificacion(mensaje) {
+    function mostrarNotificacion(msg) {
       if (!("Notification" in window)) return;
       if (Notification.permission === "granted") {
-        new Notification(mensaje);
+        new Notification(msg);
       } else if (Notification.permission !== "denied") {
         Notification.requestPermission().then(p => {
-          if (p === "granted") new Notification(mensaje);
+          if (p === "granted") new Notification(msg);
         });
       }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Inicializar mapa
-      const map = L.map('mapa-ubicacion').setView([-17.7850, -63.1737], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+      // 1) inicializar mapa
+      const map = L.map('mapa-ubicacion').setView([-17.7850,-63.1737],13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+        attribution:'© OpenStreetMap contributors'
       }).addTo(map);
 
-      // Dibujar la ruta y puntos
-      const polyline = L.polyline(ruta, {
-        color: 'red', weight: 4, opacity: 0.8
-      }).addTo(map);
-      ruta.forEach((c, i) => {
-        L.marker(c).addTo(map).bindPopup(`Punto ${i+1}`);
-      });
-      map.fitBounds(polyline.getBounds());
+      // 2) dibujar ruta de fondo (opcional)
+      const poly = L.polyline(ruta,{ color:'red', weight:4 }).addTo(map);
+      map.fitBounds(poly.getBounds());
 
-      let camionMarker = null;
-      const notifiedPoints = new Set();
+      let marker = null;
       let lastPos = null;
+      let isMoving = false;
+      const notified = new Set();
 
-      // Escuchar Firebase RTDB
-      database.ref('ubicaciones/camionero1')
+      // 3) escucha la RTDB
+      db.ref('ubicaciones/camionero1')
         .on('value', snap => {
-          const data = snap.val();
-          if (!data || !data.lat || !data.lng) {
-            if (camionMarker) {
-              map.removeLayer(camionMarker);
-              camionMarker = null;
-            }
+          const d = snap.val();
+          if (!d || !d.lat || !d.lng) {
+            if (marker) { map.removeLayer(marker); marker = null; }
             return;
           }
-          const pos = [data.lat, data.lng];
+          const pos = [d.lat, d.lng];
 
-          if (!camionMarker) {
-            camionMarker = L.marker(pos, {
+          if (!marker) {
+            // primera vez: estado “ruta”
+            marker = L.marker(pos, {
               icon: L.icon({
                 iconUrl: 'assets/images/camion.png',
-                iconSize: [25, 25],
-                iconAnchor: [12, 25]
+                iconSize: [25,25],
+                iconAnchor: [12,25]
               })
             }).addTo(map)
               .bindPopup("🚚 Camión en ruta")
               .openPopup();
+            isMoving = false;
             lastPos = pos;
+
           } else {
-            camionMarker.setLatLng(pos);
-            if (pos[0] !== lastPos[0] || pos[1] !== lastPos[1]) {
-              camionMarker.getPopup()
+            // medimos desplazamiento
+            const dist = calcularDistancia(
+              lastPos[0], lastPos[1],
+              pos[0], pos[1]
+            );
+            if (dist > 10 && !isMoving) {
+              isMoving = true;
+              marker.getPopup()
                 .setContent("🚚 Camión en movimiento")
                 .openOn(map);
-              lastPos = pos;
+            } else if (dist <= 10 && isMoving) {
+              isMoving = false;
+              marker.getPopup()
+                .setContent("🚚 Camión en ruta")
+                .openOn(map);
             }
+            marker.setLatLng(pos);
+            lastPos = pos;
           }
 
           map.setView(pos, 15);
 
-          // Notificaciones si pasa cerca de un punto
-          ruta.forEach((c, idx) => {
-            const d = calcularDistancia(data.lat, data.lng, c[0], c[1]);
-            if (d < 100 && !notifiedPoints.has(idx)) {
-              mostrarNotificacion(`📍 Camión cerca del Punto ${idx+1}`);
-              notifiedPoints.add(idx);
+          // notificaciones cerca de cada punto
+          ruta.forEach((p,i) => {
+            if (notified.has(i)) return;
+            const d2 = calcularDistancia(d.lat,d.lng,p[0],p[1]);
+            if (d2 < 100) {
+              mostrarNotificacion(`📍 Camión cerca del Punto ${i+1}`);
+              notified.add(i);
             }
           });
-        }, err => {
-          console.error("Error leyendo Firebase:", err);
-        });
+        }, err => console.error("Firebase read error:", err));
     });
   </script>
 </body>
