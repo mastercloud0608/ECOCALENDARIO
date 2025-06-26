@@ -7,42 +7,74 @@ window.addEventListener('DOMContentLoaded', () => {
     let tracking = false;
     let watchId = null;
 
-    // Restaurar estado al recargar si ya estaba activo
     if (localStorage.getItem('ubicacionActiva') === 'true') {
         iniciarSeguimiento();
     }
 
     btn.addEventListener('click', () => {
         if (!tracking) {
-            iniciarSeguimiento();
+            solicitarPermisoYIniciar();
         } else {
             detenerSeguimiento();
         }
     });
 
-    function iniciarSeguimiento() {
+    function solicitarPermisoYIniciar() {
         if (!navigator.geolocation) {
             alert("La geolocalización no es soportada por este navegador.");
             return;
         }
 
+        // iOS requiere getCurrentPosition activado desde interacción del usuario
+        navigator.geolocation.getCurrentPosition(pos => {
+            console.log("Permiso de ubicación concedido.");
+            iniciarSeguimiento();
+        }, err => {
+            alert("No se pudo obtener tu ubicación. Verifica los permisos del navegador.");
+            console.error("Permiso denegado:", err.message);
+        }, {
+            enableHighAccuracy: true,
+            timeout: 7000,
+            maximumAge: 0
+        });
+    }
+
+    function iniciarSeguimiento() {
         tracking = true;
         btn.classList.add('active');
         btn.textContent = 'Desactivar Ubicación';
         btn.style.backgroundColor = '#27ae60';
-
         localStorage.setItem('ubicacionActiva', 'true');
 
         watchId = navigator.geolocation.watchPosition(position => {
-            const { latitude, longitude } = position.coords;
-            localStorage.setItem('camioneroUbicacion', JSON.stringify({ lat: latitude, lng: longitude, timestamp: Date.now() }));
-            console.log("Ubicación guardada:", latitude, longitude);
+            const { latitude, longitude, accuracy } = position.coords;
+
+            if (accuracy > 50) {
+                console.warn("Ubicación descartada por baja precisión:", accuracy);
+                return;
+            }
+
+            const nuevaUbicacion = {
+                lat: latitude,
+                lng: longitude,
+                timestamp: Date.now()
+            };
+
+            const anterior = JSON.parse(localStorage.getItem('camioneroUbicacion') || '{}');
+
+            const moved = !anterior.lat || Math.abs(anterior.lat - latitude) > 0.00005 || Math.abs(anterior.lng - longitude) > 0.00005;
+
+            if (moved) {
+                localStorage.setItem('camioneroUbicacion', JSON.stringify(nuevaUbicacion));
+                console.log("Ubicación actualizada:", nuevaUbicacion);
+            }
+
         }, error => {
             console.error("Error obteniendo ubicación:", error.message);
         }, {
             enableHighAccuracy: true,
-            maximumAge: 10000,
-            timeout: 5000
+            maximumAge: 0,
+            timeout: 7000
         });
     }
 
