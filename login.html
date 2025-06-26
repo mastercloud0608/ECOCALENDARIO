@@ -1,4 +1,4 @@
-<!-- login.html-->
+<!-- login.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -48,6 +48,26 @@
   </footer>
 
   <script>
+    // ✅ Crear usuarios por defecto si no hay ninguno
+    if (!localStorage.getItem('usuarios')) {
+      const iniciales = [
+        {
+          nombre: 'EMACRUZ SCZ',
+          correo: 'admin@basurero.com',
+          contrasena: '12345678',
+          rol: 'admin'
+        },
+        {
+          nombre: 'Juan Camión',
+          correo: 'camionero@basurero.com',
+          contrasena: '12345678',
+          rol: 'usuario'
+        }
+      ];
+      localStorage.setItem('usuarios', JSON.stringify(iniciales));
+    }
+
+    // 🟢 Manejo del formulario
     document.getElementById('loginForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
@@ -56,7 +76,7 @@
       const errorMessage = document.getElementById('loginError');
 
       const usuarios = JSON.parse(localStorage.getItem('usuarios') || '[]');
-      const user = usuarios.find(u => u.correo === username && u.password === password);
+      const user = usuarios.find(u => u.correo === username && u.contrasena === password);
 
       if (user) {
         localStorage.setItem('loggedIn', 'true');
