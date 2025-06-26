@@ -2,6 +2,8 @@ if (localStorage.getItem('loggedIn') !== 'true') {
     window.location.href = 'login.html';
 }
 
+let map, userMarker;
+
 window.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('btn-ubicacion');
     let tracking = false;
@@ -73,18 +75,16 @@ window.addEventListener('DOMContentLoaded', () => {
         btn.style.backgroundColor = '#27ae60';
         localStorage.setItem('ubicacionActiva', 'true');
 
+        inicializarMapa();
+
         watchId = navigator.geolocation.watchPosition(position => {
             const { latitude, longitude, accuracy } = position.coords;
-
-            if (accuracy > 50) {
-                console.warn("Ubicación descartada por baja precisión:", accuracy);
-                return;
-            }
 
             const nuevaUbicacion = {
                 lat: latitude,
                 lng: longitude,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                accuracy
             };
 
             const anterior = JSON.parse(localStorage.getItem('camioneroUbicacion') || '{}');
@@ -94,6 +94,8 @@ window.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('camioneroUbicacion', JSON.stringify(nuevaUbicacion));
                 console.log("Ubicación actualizada:", nuevaUbicacion);
             }
+
+            actualizarMapa(latitude, longitude);
 
         }, error => {
             console.error("Error durante seguimiento:", error.message);
@@ -117,6 +119,39 @@ window.addEventListener('DOMContentLoaded', () => {
 
         localStorage.removeItem('camioneroUbicacion');
         localStorage.setItem('ubicacionActiva', 'false');
+    }
+
+    function inicializarMapa() {
+        if (map) return;
+
+        const mapaContenedor = document.getElementById('mapa-ubicacion');
+        if (!mapaContenedor) return;
+
+        map = L.map('mapa-ubicacion').setView([-17.7850, -63.1737], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    }
+
+    function actualizarMapa(lat, lng) {
+        if (!map) return;
+
+        const pos = [lat, lng];
+
+        if (!userMarker) {
+            userMarker = L.marker(pos, {
+                title: "Tu ubicación",
+                icon: L.icon({
+                    iconUrl: 'https://cdn-icons-png.flaticon.com/512/64/64113.png',
+                    iconSize: [25, 25]
+                })
+            }).addTo(map).bindPopup("Estás aquí").openPopup();
+        } else {
+            userMarker.setLatLng(pos);
+        }
+
+        map.setView(pos, 15);
     }
 });
 

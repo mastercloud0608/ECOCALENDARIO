@@ -49,11 +49,9 @@
             [-17.777448567255117, -63.21572145849559]
         ];
 
-        // Función para calcular distancia entre dos coordenadas
         function calcularDistancia(lat1, lon1, lat2, lon2) {
             const R = 6371000;
             const toRad = x => x * Math.PI / 180;
-
             const dLat = toRad(lat2 - lat1);
             const dLon = toRad(lon2 - lon1);
             const a = Math.sin(dLat / 2) ** 2 +
@@ -63,7 +61,6 @@
             return R * c;
         }
 
-        // Notificación al usuario
         function mostrarNotificacion(mensaje) {
             if (!("Notification" in window)) return;
 
@@ -86,6 +83,7 @@
             }).addTo(map);
 
             const polyline = L.polyline(ruta, { color: 'red', weight: 4, opacity: 0.8 }).addTo(map);
+
             ruta.forEach((coord, i) => {
                 L.marker(coord).addTo(map).bindPopup(`Punto ${i + 1}`);
             });
@@ -131,7 +129,6 @@
                         }
                     }
 
-                    // Verificar si está cerca de algún punto de la ruta
                     ruta.forEach((punto, index) => {
                         const distancia = calcularDistancia(lat, lng, punto[0], punto[1]);
                         if (distancia < 100 && !notifiedPoints.has(index)) {
