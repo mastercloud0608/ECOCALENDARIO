@@ -12,15 +12,14 @@
     <nav>
       <div class="nav-container">
         <ul>
-          <li><a href="index.html">Inicio</a></li>
-          <li><a href="calendario.html">Calendario</a></li>
-          <li><a href="noticias.html">Noticias</a></li>
-          <li><a href="ubicacion.html">Ubicación</a></li>
-          <li><a href="denuncias.html">Denuncias</a></li>
+          <li><a href="calendario.html">📅 Calendario</a></li>
+          <li><a href="noticias.html">📰 Noticias</a></li>
+          <li><a href="ubicacion.html">📍 Ubicación</a></li>
+          <li><a href="denuncias.html">📢 Denuncias</a></li>
         </ul>
         <div id="user-info"></div>
         <div id="auth-links" class="banner-publico">
-          ¿Eres camionero? <a href="login.html">Inicia sesión aquí</a> 
+          🚛 ¿Eres camionero? <a href="login.html">Inicia sesión aquí</a> 
         </div>
       </div>
     </nav>
@@ -28,37 +27,58 @@
 
   <main>
     <div class="welcome-section">
-      <h2>Sistema de Recolección de Basura</h2>
-      <p>Bienvenido al sistema de gestión de recolección de basura para los barrios Los Chinos, La Costanera y La Busch en Santa Cruz de la Sierra.</p>
+      <h2>🗑️ Sistema de Recolección de Basura</h2>
+      <p>Bienvenido al sistema de gestión de recolección de basura para los barrios <strong>Los Chinos</strong>, <strong>La Costanera</strong> y <strong>La Busch</strong> en Santa Cruz de la Sierra. Un servicio moderno y eficiente para mantener nuestra ciudad limpia.</p>
+
+      <!-- Estadísticas rápidas -->
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-number">3</span>
+          <span class="stat-label">Barrios Atendidos</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">24/7</span>
+          <span class="stat-label">Monitoreo</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">Cobertura</span>
+        </div>
+      </div>
 
       <div class="eventos">
-        <h3>Servicios Disponibles</h3>
+        <h3>🛠️ Servicios Disponibles</h3>
 
-        <div class="evento">
-          <h4>📅 Calendario de Recolección</h4>
-          <p>Consulta los días programados para la recolección de basura en tu barrio.</p>
-        </div>
+        <div class="servicios-grid">
+          <div class="evento">
+            <h4>📅 Calendario de Recolección</h4>
+            <p>Consulta los días y horarios programados para la recolección de basura en tu barrio. Planifica y nunca te pierdas el día de recolección.</p>
+          </div>
 
-        <div class="evento">
-          <h4>📍 Ubicación en Tiempo Real</h4>
-          <p>Rastrea la ubicación actual de los camiones recolectores en tu zona.</p>
-        </div>
+          <div class="evento">
+            <h4>📍 Ubicación en Tiempo Real</h4>
+            <p>Rastrea la ubicación actual de los camiones recolectores en tu zona. Sabe exactamente cuándo llegará el servicio a tu calle.</p>
+          </div>
 
-        <div class="evento">
-          <h4>📰 Noticias y Avisos</h4>
-          <p>Mantente informado sobre cambios de horarios y noticias importantes.</p>
-        </div>
+          <div class="evento">
+            <h4>📰 Noticias y Avisos</h4>
+            <p>Mantente informado sobre cambios de horarios, días feriados, y noticias importantes relacionadas con el servicio de recolección.</p>
+          </div>
 
-        <div class="evento">
-          <h4>📢 Denuncias y Sugerencias</h4>
-          <p>Reporta problemas o sugiere mejoras en el servicio de recolección.</p>
+          <div class="evento">
+            <h4>📢 Denuncias y Sugerencias</h4>
+            <p>Reporta problemas como basura no recolectada, horarios incumplidos, o sugiere mejoras para optimizar el servicio en tu barrio.</p>
+          </div>
         </div>
       </div>
     </div>
   </main>
 
   <footer>
-    <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
+    <div class="footer-content">
+      <p>&copy; 2025 Proyecto Basurero - Santa Cruz de la Sierra. Todos los derechos reservados.</p>
+      <p style="margin-top: 0.5rem; opacity: 0.8;">Comprometidos con un ambiente más limpio y sostenible 🌱</p>
+    </div>
   </footer>
 
   <script>
@@ -69,19 +89,40 @@
     if (usuario) {
       authLinks.style.display = 'none';
       const rolTexto = usuario.rol === 'admin' ? 'Administrador' : 'Camionero';
+      const emoji = usuario.rol === 'admin' ? '👨‍💼' : '🚛';
+      
       userInfoDiv.innerHTML = `
-        <p style="margin: 0;">👋 Bienvenido, <strong>${usuario.nombre}</strong> (${rolTexto})</p>
-        <button onclick="logout()" class="btn-submit" style="margin-top: 0.5rem;">Cerrar Sesión</button>
+        <p>${emoji} Bienvenido, <strong>${usuario.nombre}</strong> (${rolTexto})</p>
+        <button onclick="logout()" class="btn-submit">Cerrar Sesión</button>
       `;
+      userInfoDiv.style.display = 'block';
+    } else {
+      userInfoDiv.style.display = 'none';
     }
 
     function logout() {
-      localStorage.removeItem('loggedIn');
-      localStorage.removeItem('usuarioActivo');
-      localStorage.removeItem('ubicacionActiva');
-      localStorage.removeItem('camioneroUbicacion');
-      location.reload();
+      if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+        localStorage.removeItem('loggedIn');
+        localStorage.removeItem('usuarioActivo');
+        localStorage.removeItem('ubicacionActiva');
+        localStorage.removeItem('camioneroUbicacion');
+        
+        // Animación de salida
+        document.body.style.opacity = '0.5';
+        setTimeout(() => {
+          location.reload();
+        }, 300);
+      }
     }
+
+    // Efecto de carga suave
+    window.addEventListener('load', () => {
+      document.body.style.opacity = '0';
+      document.body.style.transition = 'opacity 0.5s ease-in';
+      setTimeout(() => {
+        document.body.style.opacity = '1';
+      }, 100);
+    });
   </script>
 </body>
 </html>

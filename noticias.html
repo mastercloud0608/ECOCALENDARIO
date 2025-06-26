@@ -1,39 +1,71 @@
-<!-- noticias.html-->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noticias</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Noticias</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .noticia {
+      background: #fff;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .noticia h3 {
+      margin-top: 0;
+    }
+    #sin-noticias {
+      font-style: italic;
+      color: #555;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <ul>
-                    <li><a href="index.html">Inicio</a></li>
-                    <li><a href="calendario.html">Calendario</a></li>
-                    <li><a href="ubicacion.html">Ubicación</a></li>
-                    <li><a href="denuncias.html">Denuncias</a></li>
-            </ul>
-        </nav>
-    </header>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="calendario.html">Calendario</a></li>
+        <li><a href="ubicacion.html">Ubicación</a></li>
+        <li><a href="denuncias.html">Denuncias</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <main>
-        <h2>Noticias</h2>
-        <div class="noticia">
-            <h3>Cambio de Horario de Recolección</h3>
-            <p>La recolección de basura en el barrio La Costanera ha cambiado de horario.</p>
-        </div>
-        <div class="noticia">
-            <h3>Mantenimiento de Camiones</h3>
-            <p>Los camiones estarán fuera de servicio por mantenimiento el miércoles.</p>
-        </div>
-    </main>
+  <main>
+    <h2>📰 Noticias</h2>
+    <div id="lista-noticias"></div>
+  </main>
 
-    <footer>
-        <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
-    </footer>
+  <footer>
+    <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
+  </footer>
+
+  <script>
+    function cargarNoticias() {
+      const cont = document.getElementById('lista-noticias');
+      cont.innerHTML = '';
+      // Leemos solo las noticias que publicó el admin
+      const noticias = JSON.parse(localStorage.getItem('noticias') || '[]');
+      if (noticias.length === 0) {
+        cont.innerHTML = '<p id="sin-noticias">No hay noticias publicadas.</p>';
+        return;
+      }
+      noticias.forEach(n => {
+        const div = document.createElement('div');
+        div.className = 'noticia';
+        div.innerHTML = `
+          <h3>${n.titulo}</h3>
+          <small>${n.fecha}</small>
+          <p>${n.contenido}</p>
+        `;
+        cont.appendChild(div);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', cargarNoticias);
+  </script>
 </body>
 </html>

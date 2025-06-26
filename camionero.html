@@ -1,3 +1,5 @@
+<!-- camionero.html-->
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -10,7 +12,6 @@
   <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-database-compat.js"></script>
   <script>
-    // Tu configuración de Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
       authDomain: "ecocalendario-51a84.firebaseapp.com",
@@ -34,14 +35,12 @@
     </nav>
   </header>
 
-  <main>
-    <section class="welcome-section">
-      <h2 id="camionero-nombre">Bienvenido, Camionero</h2>
-      <p>Pulsa el botón para compartir tu ubicación en tiempo real.</p>
-      <button id="btn-ubicacion" class="btn-toggle-ubicacion" data-tracking="false">
-        Activar Ubicación
-      </button>
-    </section>
+  <main style="padding:1rem">
+    <h2 id="camionero-nombre">Bienvenido, Camionero</h2>
+    <p>Pulsa el botón para compartir tu ubicación en tiempo real.</p>
+    <button id="btn-ubicacion" class="btn-toggle-ubicacion" data-tracking="false">
+      Activar Ubicación
+    </button>
   </main>
 
   <footer>
@@ -49,7 +48,7 @@
   </footer>
 
   <script>
-    // Opcional: si usas login, recupera aquí el nombre; si no, quita este bloque.
+    // Si tienes login, carga el nombre; si no, elimina estas líneas
     const usuario = JSON.parse(localStorage.getItem('usuarioActivo')||'{}');
     if (usuario.nombre) {
       document.getElementById('camionero-nombre').innerText = `Bienvenido, ${usuario.nombre}`;
@@ -65,7 +64,6 @@
         if (!navigator.geolocation) {
           return alert("Tu navegador no soporta geolocalización.");
         }
-        // Iniciar seguimiento
         watchId = navigator.geolocation.watchPosition(pos => {
           const payload = {
             lat: pos.coords.latitude,
@@ -73,7 +71,6 @@
             accuracy: pos.coords.accuracy,
             timestamp: pos.timestamp
           };
-          // escribe en Firebase
           db.ref('ubicaciones/camionero1').set(payload)
             .catch(e => console.error("Error escribiendo en Firebase:", e));
         }, err => {
@@ -88,14 +85,11 @@
         btn.dataset.tracking = 'true';
         btn.textContent = 'Detener Ubicación';
         btn.classList.add('active');
-
       } else {
-        // Detener seguimiento
         if (watchId !== null) {
           navigator.geolocation.clearWatch(watchId);
           watchId = null;
         }
-        // limpia en Firebase
         db.ref('ubicaciones/camionero1').remove()
           .catch(e => console.error("Error borrando en Firebase:", e));
 
@@ -106,7 +100,7 @@
     });
 
     function logout() {
-      localStorage.clear(); 
+      localStorage.clear();
       window.location.href = 'login.html';
     }
   </script>
