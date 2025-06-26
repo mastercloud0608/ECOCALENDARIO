@@ -1,149 +1,169 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ubicación en Tiempo Real</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ubicación en Tiempo Real</title>
+  <link rel="stylesheet" href="assets/css/style.css"/>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
+  />
+  <style>
+    #mapa-ubicacion { width: 100%; height: 400px; border-radius: 8px; }
+  </style>
+
+  <!-- Leaflet JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-database-compat.js"></script>
+  <script>
+    // Misma configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
+      authDomain: "ecocalendario-51a84.firebaseapp.com",
+      databaseURL: "https://ecocalendario-51a84-default-rtdb.firebaseio.com",
+      projectId: "ecocalendario-51a84",
+      storageBucket: "ecocalendario-51a84.appspot.com",
+      messagingSenderId: "276857323066",
+      appId: "1:276857323066:web:99b3f8f2e9d0d471d97f03",
+      measurementId: "G-VXCZYN6WNC"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
 </head>
 <body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="index.html">Inicio</a></li>
-                <li><a href="calendario.html">Calendario</a></li>
-                <li><a href="noticias.html">Noticias</a></li>
-                <li><a href="denuncias.html">Denuncias</a></li>
-            </ul>
-        </nav>
-    </header>
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="calendario.html">Calendario</a></li>
+        <li><a href="noticias.html">Noticias</a></li>
+        <li><a href="denuncias.html">Denuncias</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <main>
-        <section class="welcome-section">
-            <h2>Ubicación en Tiempo Real</h2>
-            <p>Visualiza la ubicación en tiempo real de los camiones de recolección de basura en los barrios de Santa Cruz de la Sierra: Los Chinos, La Costanera y La Busch.</p>
-            <div id="mapa-ubicacion" style="width: 100%; height: 400px; border-radius: 8px;"></div>
-        </section>
-    </main>
+  <main>
+    <section class="welcome-section">
+      <h2>Ubicación en Tiempo Real</h2>
+      <p>
+        Visualiza la ubicación en tiempo real de los camiones de recolección de basura
+        en los barrios de Santa Cruz de la Sierra: Los Chinos, La Costanera y La Busch.
+      </p>
+      <div id="mapa-ubicacion"></div>
+    </section>
+  </main>
 
-    <footer>
-        <div class="footer-content">
-            <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
-        </div>
-    </footer>
+  <footer>
+    <div class="footer-content">
+      <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
+    </div>
+  </footer>
 
-    <script>
-        let map;
-        let camionMarker = null;
-        let lastPosition = null;
-        let popup = null;
-        let notifiedPoints = new Set();
+  <script>
+    // Puntos de la ruta fija
+    const ruta = [
+      [-17.770539633794648, -63.20992613361338],
+      [-17.772068557215775, -63.20394188927357],
+      [-17.777305289438623, -63.205537769465565],
+      [-17.777448567255117, -63.21572145849559]
+    ];
 
-        // Ruta de recolección
-        const ruta = [
-            [-17.770539633794648, -63.20992613361338],
-            [-17.772068557215775, -63.20394188927357],
-            [-17.777305289438623, -63.205537769465565],
-            [-17.777448567255117, -63.21572145849559]
-        ];
+    function calcularDistancia(lat1, lon1, lat2, lon2) {
+      const R = 6371000; // metros
+      const toRad = x => x * Math.PI / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
 
-        function calcularDistancia(lat1, lon1, lat2, lon2) {
-            const R = 6371000;
-            const toRad = x => x * Math.PI / 180;
-            const dLat = toRad(lat2 - lat1);
-            const dLon = toRad(lon2 - lon1);
-            const a = Math.sin(dLat / 2) ** 2 +
-                      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-                      Math.sin(dLon / 2) ** 2;
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c;
-        }
+    function mostrarNotificacion(mensaje) {
+      if (!("Notification" in window)) return;
+      if (Notification.permission === "granted") {
+        new Notification(mensaje);
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then(p => {
+          if (p === "granted") new Notification(mensaje);
+        });
+      }
+    }
 
-        function mostrarNotificacion(mensaje) {
-            if (!("Notification" in window)) return;
+    window.addEventListener('DOMContentLoaded', () => {
+      // Inicializar mapa
+      const map = L.map('mapa-ubicacion').setView([-17.7850, -63.1737], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
 
-            if (Notification.permission === "granted") {
-                new Notification(mensaje);
-            } else if (Notification.permission !== "denied") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        new Notification(mensaje);
-                    }
-                });
+      // Dibujar la ruta y puntos
+      const polyline = L.polyline(ruta, {
+        color: 'red', weight: 4, opacity: 0.8
+      }).addTo(map);
+      ruta.forEach((c, i) => {
+        L.marker(c).addTo(map).bindPopup(`Punto ${i+1}`);
+      });
+      map.fitBounds(polyline.getBounds());
+
+      let camionMarker = null;
+      const notifiedPoints = new Set();
+      let lastPos = null;
+
+      // Escuchar Firebase RTDB
+      database.ref('ubicaciones/camionero1')
+        .on('value', snap => {
+          const data = snap.val();
+          if (!data || !data.lat || !data.lng) {
+            if (camionMarker) {
+              map.removeLayer(camionMarker);
+              camionMarker = null;
             }
-        }
+            return;
+          }
+          const pos = [data.lat, data.lng];
 
-        function initMap() {
-            map = L.map('mapa-ubicacion').setView([-17.7850, -63.1737], 13);
+          if (!camionMarker) {
+            camionMarker = L.marker(pos, {
+              icon: L.icon({
+                iconUrl: 'assets/images/camion.png',
+                iconSize: [25, 25],
+                iconAnchor: [12, 25]
+              })
+            }).addTo(map)
+              .bindPopup("🚚 Camión en ruta")
+              .openPopup();
+            lastPos = pos;
+          } else {
+            camionMarker.setLatLng(pos);
+            if (pos[0] !== lastPos[0] || pos[1] !== lastPos[1]) {
+              camionMarker.getPopup()
+                .setContent("🚚 Camión en movimiento")
+                .openOn(map);
+              lastPos = pos;
+            }
+          }
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+          map.setView(pos, 15);
 
-            const polyline = L.polyline(ruta, { color: 'red', weight: 4, opacity: 0.8 }).addTo(map);
-
-            ruta.forEach((coord, i) => {
-                L.marker(coord).addTo(map).bindPopup(`Punto ${i + 1}`);
-            });
-
-            map.fitBounds(polyline.getBounds());
-
-            // Intervalo para verificar ubicación del camión
-            setInterval(() => {
-                const isActive = localStorage.getItem('ubicacionActiva') === 'true';
-                const raw = localStorage.getItem('camioneroUbicacion');
-
-                if (!isActive || !raw) {
-                    if (camionMarker) {
-                        map.removeLayer(camionMarker);
-                        camionMarker = null;
-                    }
-                    return;
-                }
-
-                try {
-                    const { lat, lng } = JSON.parse(raw);
-                    if (!lat || !lng) return;
-
-                    const pos = [lat, lng];
-                    const moved = !lastPosition || pos[0] !== lastPosition[0] || pos[1] !== lastPosition[1];
-
-                    if (!camionMarker) {
-                        camionMarker = L.marker(pos, {
-                            icon: L.icon({
-                                iconUrl: 'assets/images/camion.png',
-                                iconSize: [25, 25],
-                                iconAnchor: [12, 25]
-                            })
-                        }).addTo(map);
-                        popup = camionMarker.bindPopup("Camión en ruta");
-                        popup.openPopup();
-                        lastPosition = pos;
-                    } else {
-                        camionMarker.setLatLng(pos);
-                        if (moved) {
-                            camionMarker.getPopup().setContent("🚚 Camión en movimiento").openOn(map);
-                            lastPosition = pos;
-                        }
-                    }
-
-                    ruta.forEach((punto, index) => {
-                        const distancia = calcularDistancia(lat, lng, punto[0], punto[1]);
-                        if (distancia < 100 && !notifiedPoints.has(index)) {
-                            mostrarNotificacion(`📍 Camión cerca del Punto ${index + 1}`);
-                            notifiedPoints.add(index);
-                        }
-                    });
-
-                } catch (e) {
-                    console.warn("Error leyendo ubicación del camionero:", e.message);
-                }
-            }, 2000);
-        }
-
-        window.onload = initMap;
-    </script>
+          // Notificaciones si pasa cerca de un punto
+          ruta.forEach((c, idx) => {
+            const d = calcularDistancia(data.lat, data.lng, c[0], c[1]);
+            if (d < 100 && !notifiedPoints.has(idx)) {
+              mostrarNotificacion(`📍 Camión cerca del Punto ${idx+1}`);
+              notifiedPoints.add(idx);
+            }
+          });
+        }, err => {
+          console.error("Error leyendo Firebase:", err);
+        });
+    });
+  </script>
 </body>
 </html>

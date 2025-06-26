@@ -1,18 +1,41 @@
-<!-- camionero.html-->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Panel del Camionero</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css"/>
+
+  <!-- Firebase SDK (compat para usar global firebase.database()) -->
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-database-compat.js"></script>
+  <script>
+    // Configuración de tu proyecto Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
+      authDomain: "ecocalendario-51a84.firebaseapp.com",
+      databaseURL: "https://ecocalendario-51a84-default-rtdb.firebaseio.com",
+      projectId: "ecocalendario-51a84",
+      storageBucket: "ecocalendario-51a84.appspot.com",
+      messagingSenderId: "276857323066",
+      appId: "1:276857323066:web:99b3f8f2e9d0d471d97f03",
+      measurementId: "G-VXCZYN6WNC"
+    };
+    // Inicializa Firebase y la base de datos
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+  </script>
 </head>
 <body>
   <header>
     <nav>
       <div class="nav-container">
         <ul>
-          <li><button onclick="logout()" class="btn-submit" style="margin-left: 1rem;">Cerrar Sesión</button></li>
+          <li>
+            <button onclick="logout()" class="btn-submit" style="margin-left: 1rem;">
+              Cerrar Sesión
+            </button>
+          </li>
         </ul>
       </div>
     </nav>
@@ -21,11 +44,15 @@
   <main>
     <div class="welcome-section">
       <h2 id="camionero-nombre">Bienvenido, Camionero</h2>
-      <p>Haz clic en el botón para activar tu ubicación en tiempo real durante tu recorrido.</p>
+      <p>
+        Haz clic en el botón para activar tu ubicación en tiempo real durante tu recorrido.
+      </p>
 
       <div class="evento">
         <h4>🚚 Seguimiento en Tiempo Real</h4>
-        <button id="btn-ubicacion" class="btn-toggle-ubicacion">Activar Ubicación</button>
+        <button id="btn-ubicacion" class="btn-toggle-ubicacion">
+          Activar Ubicación
+        </button>
       </div>
     </div>
   </main>
@@ -34,23 +61,120 @@
     <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
   </footer>
 
-  <script src="services/camionero.js"></script>
   <script>
-    const usuario = JSON.parse(localStorage.getItem('usuarioActivo') || '{}');
-    if (!usuario || usuario.rol !== 'usuario') {
-      alert('Acceso no autorizado.');
-      window.location.href = 'login.html';
-    } else {
+    (function(){
+      // Autorización básica
+      const usuario = JSON.parse(localStorage.getItem('usuarioActivo') || '{}');
+      if (!usuario || usuario.rol !== 'usuario') {
+        alert('Acceso no autorizado.');
+        window.location.href = 'login.html';
+        return;
+      }
       document.getElementById('camionero-nombre').innerText = `Bienvenido, ${usuario.nombre}`;
-    }
 
-    function logout() {
-      localStorage.removeItem('loggedIn');
-      localStorage.removeItem('usuarioActivo');
-      localStorage.removeItem('ubicacionActiva');
-      localStorage.removeItem('camioneroUbicacion');
-      window.location.href = 'login.html';
-    }
+      const btn = document.getElementById('btn-ubicacion');
+      let tracking = false, watchId = null;
+
+      // Si ya estaba activo, reiniciar seguimiento
+      if (localStorage.getItem('ubicacionActiva') === 'true') {
+        iniciarSeguimiento();
+      }
+
+      btn.addEventListener('click', () => {
+        tracking ? detenerSeguimiento() : solicitarPermisoYIniciar();
+      });
+
+      function solicitarPermisoYIniciar() {
+        if (!navigator.geolocation) {
+          alert("Geolocalización no soportada por este navegador.");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          () => iniciarSeguimiento(),
+          err => {
+            console.warn("Error al solicitar ubicación:", err.message);
+            if (confirm(
+              "⚠️ No se pudo obtener tu ubicación.\n\n" +
+              "- Quizá no diste permisos\n" +
+              "- O la ubicación está desactivada\n\n" +
+              "¿Ver guía para activarla?"
+            )) {
+              mostrarGuiaActivacion();
+            }
+          },
+          { enableHighAccuracy: true, timeout: 7000, maximumAge: 0 }
+        );
+      }
+
+      function mostrarGuiaActivacion() {
+        const esIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        const guia = esIOS
+          ? "🔧 iPhone (Safari o Chrome):\n\n" +
+            "1. Abrí Ajustes del iPhone.\n" +
+            "2. Buscá 'Chrome' o 'Safari'.\n" +
+            "3. Entrá en 'Ubicación'.\n" +
+            "4. Elegí 'Al usar la app' o 'Siempre'.\n\n" +
+            "Luego volvé aquí y tocá 'Activar Ubicación'."
+          : "🔧 Android/PC:\n\n" +
+            "1. Asegurate de que la ubicación esté activada.\n" +
+            "2. Verificá permisos en el navegador.\n" +
+            "3. Tocá el candado 🔒 en la barra y permití 'Ubicación'.\n\n" +
+            "Luego recargá la página o tocá 'Activar Ubicación'.";
+        alert(guia);
+      }
+
+      function iniciarSeguimiento() {
+        tracking = true;
+        btn.classList.add('active');
+        btn.textContent = 'Desactivar Ubicación';
+        btn.style.backgroundColor = '#27ae60';
+        localStorage.setItem('ubicacionActiva', 'true');
+
+        watchId = navigator.geolocation.watchPosition(pos => {
+          const { latitude: lat, longitude: lng, accuracy } = pos.coords;
+          const nuevaUbicacion = { lat, lng, accuracy, timestamp: Date.now() };
+
+          // 1) Guardar local
+          localStorage.setItem('camioneroUbicacion', JSON.stringify(nuevaUbicacion));
+
+          // 2) Subir a Firebase RTDB
+          database
+            .ref('ubicaciones/camionero1')
+            .set(nuevaUbicacion)
+            .catch(e => console.error("Firebase write error:", e));
+        },
+        err => console.error("Error watchPosition:", err.message),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 7000 });
+      }
+
+      function detenerSeguimiento() {
+        if (watchId !== null) {
+          navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+        }
+        tracking = false;
+        btn.classList.remove('active');
+        btn.textContent = 'Activar Ubicación';
+        btn.style.backgroundColor = '#2c3e50';
+
+        localStorage.removeItem('camioneroUbicacion');
+        localStorage.setItem('ubicacionActiva', 'false');
+
+        // Opcional: eliminar del nodo Firebase
+        database
+          .ref('ubicaciones/camionero1')
+          .remove()
+          .catch(e => console.error("Firebase remove error:", e));
+      }
+
+      window.logout = function() {
+        localStorage.removeItem('loggedIn');
+        localStorage.removeItem('usuarioActivo');
+        localStorage.removeItem('ubicacionActiva');
+        localStorage.removeItem('camioneroUbicacion');
+        window.location.href = 'login.html';
+      };
+    })();
   </script>
 </body>
 </html>

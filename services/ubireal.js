@@ -1,65 +1,66 @@
-let map;
-let userMarker;
+// services/ubireal.js
+import { onCamionLocationChange } from "./firebase.js";
 
-function initMap() {
-    map = L.map('mapa-ubicacion').setView([-17.7850, -63.1737], 13);
+let map, camionMarker, lastPos = null;
+const notified = new Set();
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+// Ruta predefinida
+const ruta = [
+  [-17.770539633794648, -63.20992613361338],
+  [-17.772068557215775, -63.20394188927357],
+  [-17.777305289438623, -63.205537769465565],
+  [-17.777448567255117, -63.21572145849559]
+];
 
-    // Ruta predefinida
-    const routeCoordinates = [
-        [-17.770539633794648, -63.20992613361338],
-        [-17.772068557215775, -63.20394188927357],
-        [-17.777305289438623, -63.205537769465565],
-        [-17.777448567255117, -63.21572145849559]
-    ];
-
-    const routeLine = L.polyline(routeCoordinates, {
-        color: 'red',
-        weight: 4,
-        opacity: 0.8
-    }).addTo(map);
-
-    map.fitBounds(routeLine.getBounds());
-
-    routeCoordinates.forEach((coord, i) => {
-        L.marker(coord).addTo(map).bindPopup(`Punto ${i + 1}`);
-    });
-
-    startTracking();
+function toRad(x){ return x * Math.PI/180; }
+function distancia(a1,b1,a2,b2){
+  const R=6371000, dLat=toRad(a2-a1), dLon=toRad(b2-b1);
+  const A=Math.sin(dLat/2)**2 +
+    Math.cos(toRad(a1))*Math.cos(toRad(a2))*Math.sin(dLon/2)**2;
+  return 2*R*Math.atan2(Math.sqrt(A),Math.sqrt(1-A));
 }
 
-function startTracking() {
-    if (!navigator.geolocation) {
-        alert("La geolocalización no es soportada por este navegador.");
-        return;
-    }
-
-    navigator.geolocation.watchPosition(updatePosition, handleError, {
-        enableHighAccuracy: true,
-        maximumAge: 10000,
-        timeout: 5000
-    });
+function notify(m){
+  if (!("Notification" in window)) return;
+  if (Notification.permission==="granted") new Notification(m);
+  else if (Notification.permission!=="denied"){
+    Notification.requestPermission().then(p=> p==="granted" && new Notification(m));
+  }
 }
 
-function updatePosition(position) {
-    const { latitude, longitude } = position.coords;
-    const userLatLng = [latitude, longitude];
+export function initUbicacionReal(){
+  map = L.map("mapa-ubicacion").setView([-17.7850, -63.1737], 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution:"© OpenStreetMap contributors"
+  }).addTo(map);
 
-    if (!userMarker) {
-        userMarker = L.marker(userLatLng, { title: "Tu ubicación", icon: L.icon({
-            iconUrl: 'https://cdn-icons-png.flaticon.com/512/64/64113.png',
-            iconSize: [25, 25]
-        }) }).addTo(map).bindPopup("Estás aquí");
+  const poly = L.polyline(ruta, { color:"red",weight:4,opacity:0.8 }).addTo(map);
+  ruta.forEach((c,i)=> L.marker(c).addTo(map).bindPopup(`Punto ${i+1}`));
+  map.fitBounds(poly.getBounds());
+
+  onCamionLocationChange(({lat,lng})=>{
+    const pos=[lat,lng], moved=!lastPos||pos[0]!==lastPos[0]||pos[1]!==lastPos[1];
+    if (!camionMarker){
+      camionMarker = L.marker(pos,{
+        icon:L.icon({
+          iconUrl:"assets/images/camion.png",
+          iconSize:[25,25],iconAnchor:[12,25]
+        })
+      }).addTo(map).bindPopup("Camión en ruta").openPopup();
+      lastPos=pos;
     } else {
-        userMarker.setLatLng(userLatLng);
+      camionMarker.setLatLng(pos);
+      if (moved){
+        camionMarker.getPopup().setContent("🚚 Camión en movimiento").openOn(map);
+        lastPos=pos;
+      }
     }
-
-    map.setView(userLatLng);
-}
-
-function handleError(error) {
-    console.error("Error al obtener la ubicación:", error.message);
+    ruta.forEach((p,idx)=>{
+      const d = distancia(lat,lng,p[0],p[1]);
+      if (d<100 && !notified.has(idx)){
+        notify(`📍 Camión cerca del Punto ${idx+1}`);
+        notified.add(idx);
+      }
+    });
+  });
 }
