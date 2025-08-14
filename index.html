@@ -1,34 +1,85 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Proyecto Basurero - Inicio</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <meta name="theme-color" content="#27ae60" />
+  <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
+  <a class="skip-link" href="#contenido">Saltar al contenido</a>
 
   <header>
-    <nav>
+    <nav aria-label="Principal">
       <div class="nav-container">
         <ul>
-          <li><a href="calendario.html">📅 Calendario</a></li>
+          <li><a href="calendario.html">📅 Cale ndario</a></li>
           <li><a href="noticias.html">📰 Noticias</a></li>
           <li><a href="ubicacion.html">📍 Ubicación</a></li>
           <li><a href="denuncias.html">📢 Denuncias</a></li>
         </ul>
+
         <div id="user-info"></div>
+
         <div id="auth-links" class="banner-publico">
-          🚛 ¿Eres camionero? <a href="login.html">Inicia sesión aquí</a> 
+          🚛 ¿Eres camionero? <a href="login.html">Inicia sesión aquí</a>
         </div>
       </div>
     </nav>
   </header>
 
-  <main>
+  <!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <h1>Tu basura, <span>en buenas manos</span></h1>
+    <p>Recibe alertas cuando el camión esté cerca y revisa el calendario de tu barrio en segundos.</p>
+
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="calendario.html">Ver calendario</a>
+      <button id="btn-alertas" class="btn btn-ghost">🔔 Recibir alertas</button>
+    </div>
+
+    <ul class="hero-benefits" role="list">
+      <li>ETA del camión en tiempo real</li>
+      <li>Recordatorios por barrio</li>
+      <li>Reportes con foto</li>
+    </ul>
+  </div>
+
+  <div class="hero-visual" aria-hidden="true">
+    <!-- SVG simple con camión que se mueve -->
+    <svg viewBox="0 0 600 180" class="hero-svg">
+      <defs>
+        <linearGradient id="road" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="#cfe9d5"/>
+          <stop offset="100%" stop-color="#eaf7ee"/>
+        </linearGradient>
+      </defs>
+      <!-- “Carretera” -->
+      <rect x="0" y="120" width="600" height="40" fill="url(#road)" rx="8"/>
+      <!-- Camión -->
+      <g class="truck">
+        <rect x="0" y="80" width="120" height="50" rx="6" fill="#27ae60"/>
+        <rect x="85" y="65" width="35" height="35" rx="4" fill="#2c3e50"/>
+        <circle cx="25" cy="135" r="10" fill="#2c3e50"/>
+        <circle cx="95" cy="135" r="10" fill="#2c3e50"/>
+      </g>
+    </svg>
+  </div>
+</section>
+
+
+
+  <main id="contenido">
     <div class="welcome-section">
       <h2>🗑️ Sistema de Recolección de Basura</h2>
-      <p>Bienvenido al sistema de gestión de recolección de basura para los barrios <strong>Los Chinos</strong>, <strong>La Costanera</strong> y <strong>La Busch</strong> en Santa Cruz de la Sierra. Un servicio moderno y eficiente para mantener nuestra ciudad limpia.</p>
+      <p>
+        Bienvenido al sistema de gestión de recolección de basura para los barrios
+        <strong>Los Chinos</strong>, <strong>La Costanera</strong> y
+        <strong>La Busch</strong> en Santa Cruz de la Sierra. Un servicio moderno
+        y eficiente para mantener nuestra ciudad limpia.
+      </p>
 
       <!-- Estadísticas rápidas -->
       <div class="hero-stats">
@@ -77,7 +128,7 @@
   <footer>
     <div class="footer-content">
       <p>&copy; 2025 Proyecto Basurero - Santa Cruz de la Sierra. Todos los derechos reservados.</p>
-      <p style="margin-top: 0.5rem; opacity: 0.8;">Comprometidos con un ambiente más limpio y sostenible 🌱</p>
+      <p style="margin-top: .5rem; opacity: .8;">Comprometidos con un ambiente más limpio y sostenible 🌱</p>
     </div>
   </footer>
 
@@ -90,7 +141,7 @@
       authLinks.style.display = 'none';
       const rolTexto = usuario.rol === 'admin' ? 'Administrador' : 'Camionero';
       const emoji = usuario.rol === 'admin' ? '👨‍💼' : '🚛';
-      
+
       userInfoDiv.innerHTML = `
         <p>${emoji} Bienvenido, <strong>${usuario.nombre}</strong> (${rolTexto})</p>
         <button onclick="logout()" class="btn-submit">Cerrar Sesión</button>
@@ -106,12 +157,9 @@
         localStorage.removeItem('usuarioActivo');
         localStorage.removeItem('ubicacionActiva');
         localStorage.removeItem('camioneroUbicacion');
-        
-        // Animación de salida
+
         document.body.style.opacity = '0.5';
-        setTimeout(() => {
-          location.reload();
-        }, 300);
+        setTimeout(() => location.reload(), 300);
       }
     }
 
@@ -119,9 +167,7 @@
     window.addEventListener('load', () => {
       document.body.style.opacity = '0';
       document.body.style.transition = 'opacity 0.5s ease-in';
-      setTimeout(() => {
-        document.body.style.opacity = '1';
-      }, 100);
+      requestAnimationFrame(() => { document.body.style.opacity = '1'; });
     });
   </script>
 </body>

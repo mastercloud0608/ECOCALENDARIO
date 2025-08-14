@@ -1,18 +1,25 @@
 document.addEventListener("DOMContentLoaded", () => {
     const mensaje = document.getElementById('mensaje-recoleccion');
 
-    const martes = document.querySelectorAll('.recolecta.martes');
-    const jueves = document.querySelectorAll('.recolecta.jueves');
+    const lunes = document.querySelectorAll('.recolecta.lunes');
+    const miercoles = document.querySelectorAll('.recolecta.miercoles');
+    const viernes = document.querySelectorAll('.recolecta.viernes');
 
-    martes.forEach(td => {
+    lunes.forEach(td => {
         td.addEventListener('click', () => {
-            mensaje.innerHTML = "📌 La recolección será el <strong>martes</strong> a las <strong>10:00am</strong>.";
+            mensaje.innerHTML = "📌 La recolección será el <strong>lunes</strong> a las <strong>10:00am</strong>.";
         });
     });
 
-    jueves.forEach(td => {
+    miercoles.forEach(td => {
         td.addEventListener('click', () => {
-            mensaje.innerHTML = "📌 La recolección será el <strong>jueves</strong> a las <strong>04:00pm</strong>.";
+            mensaje.innerHTML = "📌 La recolección será el <strong>miércoles</strong> a las <strong>10:00am</strong>.";
+        });
+    });
+
+    viernes.forEach(td => {
+        td.addEventListener('click', () => {
+            mensaje.innerHTML = "📌 La recolección será el <strong>viernes</strong> a las <strong>04:00pm</strong>.";
         });
     });
 });
