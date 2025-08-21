@@ -1,0 +1,267 @@
+.success-message {
+  color: var(--primary);
+  background: color-mix(in oklab, var(--primary), white 90%);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  margin-top: var(--space-3);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.admin-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-700) 100%);
+  color: white;
+  padding: var(--space-5);
+  border-radius: var(--radius);
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.admin-header h2 {
+  color: white;
+  margin-bottom: var(--space-2);
+}
+
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin: var(--space-6) 0;
+}
+
+.stat-card {
+  background: var(--surface);
+  padding: var(--space-5);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+  border-left: 4px solid var(--primary);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.stat-label {
+  color: var(--muted);
+  font-size: var(--font-sm);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.denuncia-admin {
+  background: var(--surface);
+  border: 1px solid #ddd;
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s ease;
+}
+
+.denuncia-admin:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.denuncia-admin h4 {
+  color: var(--secondary);
+  font-size: 1.25rem;
+  margin-bottom: var(--space-3);
+  font-weight: 700;
+}
+
+.denuncia-admin p {
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: var(--space-4);
+}
+
+.denuncia-fecha {
+  font-size: var(--font-sm);
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: var(--space-3);
+}
+
+.denuncia-fotos-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-3);
+  margin: var(--space-4) 0;
+}
+
+.denuncia-fotos-admin img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  border: 2px solid #ddd;
+}
+
+.denuncia-fotos-admin img:hover {
+  transform: scale(1.05);
+}
+
+.acciones-denuncia {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.btn-aprobar {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-aprobar:hover {
+  background: var(--primary-600);
+  transform: translateY(-2px);
+}
+
+.btn-rechazar {
+  background: var(--danger);
+  color: white;
+  border: none;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-rechazar:hover {
+  background: color-mix(in oklab, var(--danger), black 15%);
+  transform: translateY(-2px);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-7);
+  color: var(--muted);
+}
+
+.empty-state .icon {
+  font-size: 4rem;
+  margin-bottom: var(--space-4);
+  opacity: 0.6;
+}
+
+.panel-section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: var(--space-6);
+  margin-bottom: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-section h3 {
+  color: var(--secondary);
+  font-size: var(--font-h3);
+  margin-bottom: var(--space-5);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Modal para ver fotos */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+
+.modal-content img {
+  width: 100%;
+  height: auto;
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+}
+
+.modal-close {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  background: white;
+  color: var(--secondary);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 20px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Animaciones de toast */
+@keyframes slideInFromRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes slideOutToRight {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .acciones-denuncia {
+    flex-direction: column;
+  }
+  .denuncia-fotos-admin {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-stats {
+    grid-template-columns: 1fr;
+  }
+  .denuncia-fotos-admin {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

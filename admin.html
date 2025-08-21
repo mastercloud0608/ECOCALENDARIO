@@ -1,47 +1,176 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Panel de Administrador</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="stylesheet" href="assets/css/admin.css" />
   <style>
-    .success-message { color: green; margin-top: .5rem; }
+    /* --- Estilos mínimos específicos del panel (puedes pasarlos a assets/css/admin.css) --- */
+    :root{
+      --chip-bg:#f2f2f2;
+      --chip-active-bg:#e6f4ea;
+      --chip-active-bd:#34a853;
+      --danger:#e53935;
+      --warning:#f9a825;
+      --ok:#34a853;
+      --text-muted:#666;
+      --radius-sm:8px;
+      --radius-md:12px;
+      --shadow-sm:0 2px 6px rgba(0,0,0,.08);
+      --shadow-md:0 6px 20px rgba(0,0,0,.12);
+    }
+    header nav ul{
+      display:flex; gap:1rem; align-items:center; list-style:none; padding:1rem; margin:0;
+    }
+    header nav a{ text-decoration:none; }
+    main{ padding:1rem; max-width:1100px; margin:auto; }
+
+    .toolbar{
+      display:flex; flex-wrap:wrap; gap:1rem; align-items:center; margin:1.25rem 0;
+    }
+    .toolbar input[type="search"]{
+      flex:1 1 260px; padding:.75rem 1rem; border-radius:10px; border:1px solid #ddd; outline:none;
+    }
+    .chips{ display:flex; gap:.5rem; flex-wrap:wrap; }
+    .chip{
+      border:1px solid transparent; background:var(--chip-bg); padding:.5rem .75rem; border-radius:999px; cursor:pointer; font-weight:600;
+    }
+    .chip[data-active="true"]{
+      background:var(--chip-active-bg); border-color:var(--chip-active-bd); color:#0b5b2b;
+    }
+
+    .stats{
+      display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:.5rem;
+    }
+    .stat{
+      background:#fff; border:1px solid #eee; border-radius:12px; padding:.6rem .9rem; box-shadow:var(--shadow-sm);
+      display:flex; gap:.5rem; align-items:center; color:#333;
+    }
+    .stat .dot{width:.6rem;height:.6rem;border-radius:50%;}
+    .dot-p{background:var(--warning)}
+    .dot-a{background:var(--ok)}
+    .dot-t{background:#2196f3}
+
+    .denuncias-grid{
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:1rem;
+    }
+    .card{
+      background:#fff; border:1px solid #eee; border-radius:14px; padding:1rem; box-shadow:var(--shadow-sm); display:flex; flex-direction:column; gap:.5rem;
+      transition:transform .08s ease;
+    }
+    .card:hover{ transform:translateY(-2px); }
+    .card .fecha{ font-size:.85rem; color:var(--text-muted); }
+    .card h4{ margin:.25rem 0 .25rem; line-height:1.25; }
+    .card p{ color:#333; margin:.25rem 0 .5rem; }
+    .thumbs{ display:flex; gap:.4rem; flex-wrap:wrap; }
+    .thumbs img{
+      width:80px; height:64px; object-fit:cover; border-radius:8px; border:1px solid #eee; cursor:pointer;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:.35rem; font-size:.75rem; padding:.25rem .5rem; border-radius:999px; border:1px solid #eee; color:#333;
+      background:#fafafa;
+    }
+    .badge.pendiente{ background:#fff7e6; border-color:#ffd666; color:#8a6d1a; }
+    .badge.aprobada{ background:#e6ffed; border-color:#b7eb8f; color:#0b5b2b; }
+    .actions{ display:flex; gap:.5rem; margin-top:.5rem; flex-wrap:wrap; }
+    .btn{
+      border:1px solid #ddd; background:#fff; padding:.5rem .8rem; border-radius:10px; cursor:pointer;
+    }
+    .btn-primary{ background:#0b5b2b; color:#fff; border-color:#0b5b2b; }
+    .btn-danger{ background:var(--danger); color:#fff; border-color:var(--danger); }
+    .btn-outline{ background:#fff; }
+    .empty{
+      text-align:center; color:var(--text-muted); padding:2rem 1rem; border:1px dashed #ddd; border-radius:12px; background:#fff;
+    }
+
+    /* Modal */
+    .modal{ position:fixed; inset:0; display:none; }
+    .modal.active{ display:block; }
+    .modal .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.45); }
+    .modal .content{
+      position:relative; z-index:2; max-width:900px; margin:4vh auto; background:#fff; border-radius:16px; box-shadow:var(--shadow-md);
+      padding:1rem;
+    }
+    .modal .close{ position:absolute; top:.5rem; right:.5rem; width:40px; height:40px; border-radius:999px; border:none; cursor:pointer; font-size:1.35rem; }
+    .detail{
+      display:grid; grid-template-columns:1.1fr .9fr; gap:1rem;
+    }
+    @media (max-width: 820px){ .detail{ grid-template-columns:1fr; } }
+
+    .detail .fotos{
+      display:grid; grid-template-columns:repeat(auto-fill, minmax(120px,1fr)); gap:.5rem; max-height:55vh; overflow:auto; padding-right:.25rem;
+    }
+    .detail .fotos img{
+      width:100%; aspect-ratio:4/3; object-fit:cover; border-radius:10px; border:1px solid #eee; cursor:pointer;
+    }
+    .detail .meta{ color:var(--text-muted); font-size:.9rem; }
+    .detail .bigtitle{ margin:.25rem 0 .5rem; }
+    .detail .desc{ white-space:pre-wrap; }
+
+    /* Modal de imagen */
+    .imgmodal{ position:fixed; inset:0; display:none; }
+    .imgmodal.active{ display:block; }
+    .imgmodal .backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.75); }
+    .imgmodal .stage{ position:relative; z-index:2; height:100%; display:flex; align-items:center; justify-content:center; }
+    .imgmodal img{ max-width:92vw; max-height:92vh; border-radius:12px; box-shadow:var(--shadow-md); }
+    .imgmodal .close{ position:absolute; top:16px; right:16px; font-size:2rem; color:#fff; background:transparent; border:none; cursor:pointer; }
+    .success-message{ color:green; margin-top:.5rem; }
   </style>
 </head>
 <body>
+  <a href="#main" class="skip-link">Saltar al contenido principal</a>
+
   <header>
-    <nav>
+    <nav aria-label="Navegación principal">
       <ul>
         <li><a href="index.html">Inicio</a></li>
-        <li><a href="denuncias.html">Ver Denuncias</a></li>
-        <li><button onclick="logout()" class="btn-submit">Cerrar Sesión</button></li>
+        <li><a href="denuncias.html">Ver Denuncias (público)</a></li>
+        <li><button type="button" id="btn-logout" class="btn btn-outline">Cerrar Sesión</button></li>
       </ul>
     </nav>
   </header>
 
-  <main>
+  <main id="main">
     <h2 id="admin-nombre">👤 Panel del Administrador</h2>
-    <p>Desde aquí puedes revisar denuncias, usuarios y publicar noticias.</p>
+    <p>Desde aquí puedes revisar, previsualizar y gestionar denuncias; además de publicar noticias.</p>
 
-    <button onclick="verUsuarios()" class="btn-submit">Ver Usuarios Registrados</button>
+    <!-- Herramientas -->
+    <div class="toolbar" role="region" aria-label="Herramientas de filtrado y búsqueda">
+      <input id="buscar" type="search" placeholder="🔎 Buscar por título o descripción..." aria-label="Buscar denuncias" />
+      <div class="chips" role="tablist" aria-label="Filtros de estado">
+        <button class="chip" data-filter="pendientes" data-active="true" role="tab" aria-selected="true">Pendientes</button>
+        <button class="chip" data-filter="aprobadas" role="tab" aria-selected="false">Aprobadas</button>
+        <button class="chip" data-filter="todas" role="tab" aria-selected="false">Todas</button>
+      </div>
+    </div>
 
-    <!-- Panel de denuncias -->
-    <section id="panel-denuncias" style="margin-top:2rem;">
-      <h3>📣 Denuncias Pendientes</h3>
-      <div id="denuncias-pendientes" class="denuncias-list"></div>
+    <!-- Stats -->
+    <div class="stats" aria-hidden="true">
+      <div class="stat"><span class="dot dot-p"></span> Pendientes: <strong id="count-pendientes">0</strong></div>
+      <div class="stat"><span class="dot dot-a"></span> Aprobadas: <strong id="count-aprobadas">0</strong></div>
+      <div class="stat"><span class="dot dot-t"></span> Total: <strong id="count-todas">0</strong></div>
+    </div>
+
+    <!-- Lista -->
+    <section id="panel-denuncias" aria-live="polite" aria-busy="false">
+      <h3>📣 Denuncias</h3>
+      <div id="denuncias-grid" class="denuncias-grid"></div>
+      <div id="lista-vacia" class="empty" style="display:none;">
+        <div style="font-size:2rem;">📭</div>
+        <p>No hay denuncias que coincidan con el filtro actual.</p>
+      </div>
     </section>
 
-    <!-- Nuevo panel para crear noticias -->
+    <!-- Crear noticia -->
     <section id="panel-noticias" style="margin-top:2rem;">
       <h3>📝 Crear Noticia</h3>
       <form id="formNoticia" class="form-denuncia">
-        <input type="text" id="notiTitulo" placeholder="Título de la noticia" required>
+        <input type="text" id="notiTitulo" placeholder="Título de la noticia" required />
         <textarea id="notiContenido" rows="4" placeholder="Contenido de la noticia" required></textarea>
-        <button type="submit" class="btn-submit">Publicar noticia</button>
-        <p id="mensajeNoticia" class="success-message" style="display:none;">
-          ✅ Noticia publicada correctamente.
-        </p>
+        <button type="submit" class="btn btn-primary">Publicar noticia</button>
+        <p id="mensajeNoticia" class="success-message" style="display:none;">✅ Noticia publicada correctamente.</p>
       </form>
     </section>
   </main>
@@ -50,97 +179,38 @@
     <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
   </footer>
 
-  <script>
-    // Autorización
-    const usuario = JSON.parse(localStorage.getItem('usuarioActivo')||'{}');
-    if (!usuario.rol || usuario.rol !== 'admin') {
-      alert('Acceso no autorizado.');
-      location.href = 'login.html';
-    }
-    document.getElementById('admin-nombre').innerText += ` - ${usuario.nombre}`;
+  <!-- Modal de detalle de denuncia -->
+  <div id="modal-denuncia" class="modal" role="dialog" aria-modal="true" aria-labelledby="md-titulo" aria-hidden="true">
+    <div class="backdrop" data-close-modal></div>
+    <div class="content">
+      <button class="close" aria-label="Cerrar detalle" data-close-modal>&times;</button>
+      <div class="detail">
+        <div>
+          <div class="meta" id="md-fecha"></div>
+          <h3 class="bigtitle" id="md-titulo"></h3>
+          <p class="desc" id="md-descripcion"></p>
+        </div>
+        <div>
+          <div class="fotos" id="md-fotos"></div>
+          <div class="actions" style="margin-top:.75rem;">
+            <button id="md-aprobar" class="btn btn-primary">Aprobar</button>
+            <button id="md-eliminar" class="btn btn-danger">Eliminar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    // Ver usuarios
-    function verUsuarios() {
-      const usuarios = JSON.parse(localStorage.getItem('usuarios')||'[]');
-      if (!usuarios.length) return alert("No hay usuarios registrados.");
-      let txt = "Usuarios registrados:\n\n";
-      usuarios.forEach((u,i)=> {
-        txt += `${i+1}. ${u.nombre} (${u.rol}) - ${u.correo}\n`;
-      });
-      alert(txt);
-    }
+  <!-- Modal de imagen grande -->
+  <div id="modal-img" class="imgmodal" aria-hidden="true">
+    <div class="backdrop" data-close-img></div>
+    <div class="stage">
+      <button class="close" aria-label="Cerrar imagen" data-close-img>&times;</button>
+      <img id="img-grande" alt="Evidencia ampliada" />
+    </div>
+  </div>
 
-    // Logout
-    function logout() {
-      localStorage.removeItem('loggedIn');
-      localStorage.removeItem('usuarioActivo');
-      location.href = 'login.html';
-    }
-
-    // Cargar denuncias pendientes (igual que antes)
-    function cargarDenuncias() {
-      const cont = document.getElementById('denuncias-pendientes');
-      cont.innerHTML = '';
-      const denuncias = JSON.parse(localStorage.getItem('denuncias')||'[]');
-      const pend = denuncias.filter(d=>!d.aprobada);
-      if (!pend.length) {
-        cont.innerHTML = '<p>No hay denuncias pendientes.</p>';
-        return;
-      }
-      pend.forEach((d,i)=>{
-        const div = document.createElement('div');
-        div.className = 'evento';
-        div.innerHTML = `
-          <h4>${d.titulo}</h4>
-          <p>${d.descripcion}</p>
-          <button onclick="aprobarDenuncia(${i})" class="btn-submit">Aprobar</button>
-          <button onclick="eliminarDenuncia(${i})" class="btn-debug">Eliminar</button>
-        `;
-        cont.appendChild(div);
-      });
-    }
-    function aprobarDenuncia(idx) {
-      let den = JSON.parse(localStorage.getItem('denuncias')||'[]');
-      const pend = den.filter(d=>!d.aprobada);
-      const originalIdx = den.findIndex(d=>d.titulo===pend[idx].titulo&&d.descripcion===pend[idx].descripcion);
-      if (originalIdx!==-1) {
-        den[originalIdx].aprobada = true;
-        localStorage.setItem('denuncias', JSON.stringify(den));
-        cargarDenuncias();
-      }
-    }
-    function eliminarDenuncia(idx) {
-      let den = JSON.parse(localStorage.getItem('denuncias')||'[]');
-      const pend = den.filter(d=>!d.aprobada);
-      const toDel = pend[idx];
-      den = den.filter(d=>!(d.titulo===toDel.titulo&&d.descripcion===toDel.descripcion));
-      localStorage.setItem('denuncias', JSON.stringify(den));
-      cargarDenuncias();
-    }
-
-    // Manejo de creación de noticias
-    document.getElementById('formNoticia').addEventListener('submit', e=> {
-      e.preventDefault();
-      const t = document.getElementById('notiTitulo').value.trim();
-      const c = document.getElementById('notiContenido').value.trim();
-      if (!t||!c) return;
-      const noticias = JSON.parse(localStorage.getItem('noticias')||'[]');
-      noticias.unshift({
-        titulo: t,
-        contenido: c,
-        fecha: new Date().toLocaleDateString(),
-        timestamp: Date.now()
-      });
-      localStorage.setItem('noticias', JSON.stringify(noticias));
-      document.getElementById('mensajeNoticia').style.display = 'block';
-      setTimeout(()=>{
-        document.getElementById('mensajeNoticia').style.display = 'none';
-      }, 3000);
-      e.target.reset();
-    });
-
-    // Al cargar la página
-    window.addEventListener('load', cargarDenuncias);
-  </script>
+  <!-- OJO: ruta correcta según tu proyecto -->
+  <script src="services/admin-denuncias.js"></script>
 </body>
 </html>
