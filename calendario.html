@@ -1,5 +1,3 @@
-<!-- calendario.html-->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -7,6 +5,196 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario de Recolección</title>
     <link rel="stylesheet" href="assets/css/style.css">
+    <style>
+        /* Estilos para notificaciones en el calendario */
+        .notification-banner {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 5px solid #2e7d32;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification-banner.approaching {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            border-left-color: #e65100;
+        }
+
+        .notification-banner.arrived {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            border-left-color: #0d47a1;
+        }
+
+        .notification-banner.offline {
+            background: linear-gradient(135deg, #9e9e9e, #757575);
+            border-left-color: #424242;
+            animation: none;
+        }
+
+        .notification-content {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .notification-icon {
+            font-size: 2em;
+            animation: bounce 1.5s infinite;
+        }
+
+        .notification-text h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .notification-text p {
+            margin: 0;
+            opacity: 0.95;
+            font-size: 0.9em;
+        }
+
+        .notification-time {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        /* Animaciones */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        @keyframes slideDown {
+            from { 
+                opacity: 0; 
+                transform: translateY(-20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .notification-banner.new {
+            animation: slideDown 0.5s ease-out, pulse 2s infinite 0.5s;
+        }
+
+        /* Estilos para el estado del camión */
+        .truck-status {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .truck-status.active {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .truck-status.approaching {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .truck-status.arrived {
+            border-color: #007bff;
+            background: #cce5ff;
+        }
+
+        .truck-coordinates {
+            font-family: monospace;
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* Mejoras al calendario existente */
+        .calendario table {
+            position: relative;
+        }
+
+        .dia-hoy {
+            background: #007bff !important;
+            color: white !important;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .dia-hoy::after {
+            content: "HOY";
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 0.6em;
+            opacity: 0.8;
+        }
+
+        /* Botón de conexión */
+        .connection-controls {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .connect-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+
+        .connect-btn:hover {
+            background: #218838;
+        }
+
+        .connect-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 5px;
+        }
+
+        .status-connected {
+            background: #28a745;
+            box-shadow: 0 0 5px #28a745;
+        }
+
+        .status-disconnected {
+            background: #dc3545;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -20,95 +208,424 @@
         </nav>
     </header>
 
-<main>
-    <h2>Calendario de Recolección</h2>
-    <p>Consulta los días de recolección de basura en los barrios: Los Chinos, La Costanera y La Busch.</p>
+    <main>
+        <h2>Calendario de Recolección</h2>
+        <p>Consulta los días de recolección de basura en los barrios: Los Chinos, La Costanera y La Busch.</p>
 
-    <!-- Calendario -->
-    <div class="calendario">
-        <table>
-            <thead>
-                <tr>
-                    <th>Dom</th>
-                    <th>Lun</th>
-                    <th>Mar</th>
-                    <th>Mié</th>
-                    <th>Jue</th>
-                    <th>Vie</th>
-                    <th>Sáb</th>
-                </tr>
-            </thead>
-           <tbody>
-    <tr>
-        <td></td>
-        <td class="highlight recolecta lunes">2</td>
-        <td>3</td>
-        <td class="highlight recolecta miercoles">4</td>
-        <td>5</td>
-        <td class="highlight recolecta viernes">6</td>
-        <td>7</td>
-    </tr>
-    <tr>
-        <td>8</td>
-        <td class="highlight recolecta lunes">9</td>
-        <td>10</td>
-        <td class="highlight recolecta miercoles">11</td>
-        <td>12</td>
-        <td class="highlight recolecta viernes">13</td>
-        <td>14</td>
-    </tr>
-    <tr>
-        <td>15</td>
-        <td class="highlight recolecta lunes">16</td>
-        <td>17</td>
-        <td class="highlight recolecta miercoles">18</td>
-        <td>19</td>
-        <td class="highlight recolecta viernes">20</td>
-        <td>21</td>
-    </tr>
-    <tr>
-        <td>22</td>
-        <td class="highlight recolecta lunes">23</td>
-        <td>24</td>
-        <td class="highlight recolecta miercoles">25</td>
-        <td>26</td>
-        <td class="highlight recolecta viernes">27</td>
-        <td>28</td>
-    </tr>
-    <tr>
-        <td>29</td>
-        <td class="highlight recolecta lunes">30</td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td></td>
-    </tr>
-</tbody>
-
-        </table>
-    </div>
-
-    <!-- Aquí se mostrará el mensaje -->
-    <div id="mensaje-recoleccion" class="mensaje-recoleccion"></div>
-
-    <!-- Consejos -->
-    <div class="eventos">
-        <h3>Consejos Ambientales</h3>
-        <div class="evento">
-            <p>Consejo sobre reciclaje: No mezcles plásticos con residuos orgánicos.</p>
+        <!-- Estado del camión y controles -->
+        <div class="connection-controls">
+            <span>🚛 Estado del Camión:</span>
+            <span id="connection-status">Desconectado</span>
+            <span id="status-indicator" class="status-indicator status-disconnected"></span>
+            <button id="connect-btn" class="connect-btn">Conectar</button>
         </div>
-        <div class="evento">
-            <p>Consejo sobre la reducción de residuos: Compra productos sin embalaje.</p>
+
+        <!-- Banner de notificaciones del camión -->
+        <div id="truck-notification" class="notification-banner offline" style="display: none;">
+            <div class="notification-time" id="notification-time"></div>
+            <div class="notification-content">
+                <div class="notification-icon" id="notification-icon">🚛</div>
+                <div class="notification-text">
+                    <h3 id="notification-title">Camión Recolector</h3>
+                    <p id="notification-message">Conectando con el sistema...</p>
+                </div>
+            </div>
         </div>
-    </div>
-</main>
+
+        <!-- Estado detallado del camión -->
+        <div id="truck-status" class="truck-status" style="display: none;">
+            <div>
+                <strong>📍 Ubicación Actual:</strong>
+                <span id="current-location">Cargando...</span>
+            </div>
+            <div class="truck-coordinates" id="truck-coordinates">
+                Coordenadas: ---, ---
+            </div>
+        </div>
+
+        <!-- Calendario -->
+        <div class="calendario">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Dom</th>
+                        <th>Lun</th>
+                        <th>Mar</th>
+                        <th>Mié</th>
+                        <th>Jue</th>
+                        <th>Vie</th>
+                        <th>Sáb</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td></td>
+                        <td class="highlight recolecta lunes">2</td>
+                        <td>3</td>
+                        <td class="highlight recolecta miercoles">4</td>
+                        <td>5</td>
+                        <td class="highlight recolecta viernes">6</td>
+                        <td>7</td>
+                    </tr>
+                    <tr>
+                        <td>8</td>
+                        <td class="highlight recolecta lunes">9</td>
+                        <td>10</td>
+                        <td class="highlight recolecta miercoles">11</td>
+                        <td>12</td>
+                        <td class="highlight recolecta viernes">13</td>
+                        <td>14</td>
+                    </tr>
+                    <tr>
+                        <td>15</td>
+                        <td class="highlight recolecta lunes">16</td>
+                        <td>17</td>
+                        <td class="highlight recolecta miercoles dia-hoy">18</td>
+                        <td>19</td>
+                        <td class="highlight recolecta viernes">20</td>
+                        <td>21</td>
+                    </tr>
+                    <tr>
+                        <td>22</td>
+                        <td class="highlight recolecta lunes">23</td>
+                        <td>24</td>
+                        <td class="highlight recolecta miercoles">25</td>
+                        <td>26</td>
+                        <td class="highlight recolecta viernes">27</td>
+                        <td>28</td>
+                    </tr>
+                    <tr>
+                        <td>29</td>
+                        <td class="highlight recolecta lunes">30</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mensaje de recolección -->
+        <div id="mensaje-recoleccion" class="mensaje-recoleccion"></div>
+
+        <!-- Consejos -->
+        <div class="eventos">
+            <h3>Consejos Ambientales</h3>
+            <div class="evento">
+                <p>Consejo sobre reciclaje: No mezcles plásticos con residuos orgánicos.</p>
+            </div>
+            <div class="evento">
+                <p>Consejo sobre la reducción de residuos: Compra productos sin embalaje.</p>
+            </div>
+        </div>
+    </main>
 
     <footer>
         <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
     </footer>
 
-    <!-- Script local -->
-    <script src="services/calendario.js"></script>
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-database-compat.js"></script>
+
+    <script>
+        // Sistema de notificaciones del calendario
+        class CalendarNotificationSystem {
+            constructor() {
+                this.isConnected = false;
+                this.lastNotification = null;
+                this.notified = new Set();
+                this.RADIO_NOTIFICACION = 150;
+                this.RADIO_MUY_CERCA = 50;
+                
+                // Puntos de la ruta con información detallada
+                this.puntos = [
+                    {
+                        coords: [-17.7705396, -63.2099261],
+                        nombre: "Plaza Principal",
+                        zona: "Centro"
+                    },
+                    {
+                        coords: [-17.7720686, -63.2039419],
+                        nombre: "Mercado Municipal", 
+                        zona: "Zona Norte"
+                    },
+                    {
+                        coords: [-17.7773053, -63.2055378],
+                        nombre: "Barrio San Antonio",
+                        zona: "Zona Sur"
+                    },
+                    {
+                        coords: [-17.7774486, -63.2157215],
+                        nombre: "Terminal de Buses",
+                        zona: "Zona Este"
+                    }
+                ];
+
+                this.initUI();
+                this.initFirebase();
+            }
+
+            initUI() {
+                const connectBtn = document.getElementById('connect-btn');
+                connectBtn.addEventListener('click', () => {
+                    if (this.isConnected) {
+                        this.disconnect();
+                    } else {
+                        this.connect();
+                    }
+                });
+            }
+
+            initFirebase() {
+                // Configuración de Firebase
+                const firebaseConfig = {
+                    apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
+                    authDomain: "ecocalendario-51a84.firebaseapp.com",
+                    databaseURL: "https://ecocalendario-51a84-default-rtdb.firebaseio.com",
+                    projectId: "ecocalendario-51a84",
+                    storageBucket: "ecocalendario-51a84.appspot.com",
+                    messagingSenderId: "276857323066",
+                    appId: "1:276857323066:web:99b3f8f2e9d0d471d97f03",
+                    measurementId: "G-VXCZYN6WNC"
+                };
+                
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                this.db = firebase.database();
+            }
+
+            connect() {
+                this.updateConnectionStatus(true);
+                this.showNotification("🚛 Conectando...", "Estableciendo conexión con el camión recolector", "offline");
+                
+                // Suscribirse a updates de ubicación
+                this.db.ref('ubicaciones/camionero1').on('value', (snap) => {
+                    this.handleLocationUpdate(snap.val());
+                }, (error) => {
+                    console.error("Error conectando con Firebase:", error);
+                    this.showNotification("❌ Error de Conexión", "No se pudo conectar con el sistema de rastreo", "offline");
+                });
+            }
+
+            disconnect() {
+                this.updateConnectionStatus(false);
+                this.db.ref('ubicaciones/camionero1').off();
+                this.hideNotification();
+                this.hideTruckStatus();
+            }
+
+            updateConnectionStatus(connected) {
+                this.isConnected = connected;
+                const statusEl = document.getElementById('connection-status');
+                const indicatorEl = document.getElementById('status-indicator');
+                const connectBtn = document.getElementById('connect-btn');
+
+                if (connected) {
+                    statusEl.textContent = "Conectado";
+                    indicatorEl.className = "status-indicator status-connected";
+                    connectBtn.textContent = "Desconectar";
+                } else {
+                    statusEl.textContent = "Desconectado";
+                    indicatorEl.className = "status-indicator status-disconnected";
+                    connectBtn.textContent = "Conectar";
+                }
+            }
+
+            handleLocationUpdate(data) {
+                if (!data || typeof data.lat !== 'number' || typeof data.lng !== 'number') {
+                    this.showNotification("⚠️ Sin Ubicación", "El camión no está transmitiendo ubicación", "offline");
+                    return;
+                }
+
+                const { lat, lng } = data;
+                this.updateTruckStatus(lat, lng);
+                this.checkProximity(lat, lng);
+            }
+
+            updateTruckStatus(lat, lng) {
+                // Mostrar estado del camión
+                const statusEl = document.getElementById('truck-status');
+                const locationEl = document.getElementById('current-location');
+                const coordinatesEl = document.getElementById('truck-coordinates');
+
+                statusEl.style.display = 'block';
+                statusEl.className = 'truck-status active';
+                
+                // Encontrar ubicación más cercana
+                let closestPoint = null;
+                let minDistance = Infinity;
+                
+                this.puntos.forEach(punto => {
+                    const distance = this.distancia(lat, lng, punto.coords[0], punto.coords[1]);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestPoint = punto;
+                    }
+                });
+
+                if (closestPoint) {
+                    if (minDistance <= this.RADIO_MUY_CERCA) {
+                        locationEl.textContent = `En ${closestPoint.nombre} (${closestPoint.zona})`;
+                        statusEl.className = 'truck-status arrived';
+                    } else if (minDistance <= this.RADIO_NOTIFICACION) {
+                        locationEl.textContent = `Cerca de ${closestPoint.nombre} (${Math.round(minDistance)}m)`;
+                        statusEl.className = 'truck-status approaching';
+                    } else {
+                        locationEl.textContent = `En ruta hacia ${closestPoint.nombre}`;
+                        statusEl.className = 'truck-status active';
+                    }
+                }
+
+                coordinatesEl.textContent = `Coordenadas: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            }
+
+            checkProximity(lat, lng) {
+                this.puntos.forEach((punto, idx) => {
+                    const distanciaActual = this.distancia(lat, lng, punto.coords[0], punto.coords[1]);
+                    const puntoId = `punto-${idx}`;
+
+                    // Notificación de aproximación (150m)
+                    if (distanciaActual <= this.RADIO_NOTIFICACION && !this.notified.has(puntoId)) {
+                        const tiempoEstimado = this.calcularTiempoEstimado(distanciaActual);
+                        
+                        this.showNotification(
+                            "🔔 Camión Aproximándose", 
+                            `Se acerca a ${punto.nombre} (${punto.zona}) en aproximadamente ${tiempoEstimado}`,
+                            "approaching"
+                        );
+                        
+                        this.notified.add(puntoId);
+                    }
+
+                    // Notificación de llegada (50m)
+                    if (distanciaActual <= this.RADIO_MUY_CERCA && !this.notified.has(`${puntoId}-llegada`)) {
+                        this.showNotification(
+                            "📍 ¡Camión en tu Zona!", 
+                            `El camión está en ${punto.nombre}. ¡Es momento de sacar la basura!`,
+                            "arrived"
+                        );
+                        this.notified.add(`${puntoId}-llegada`);
+                    }
+
+                    // Limpiar notificaciones si se aleja
+                    if (distanciaActual > this.RADIO_NOTIFICACION * 2) {
+                        this.notified.delete(puntoId);
+                        this.notified.delete(`${puntoId}-llegada`);
+                    }
+                });
+            }
+
+            showNotification(title, message, type = "default") {
+                const banner = document.getElementById('truck-notification');
+                const titleEl = document.getElementById('notification-title');
+                const messageEl = document.getElementById('notification-message');
+                const iconEl = document.getElementById('notification-icon');
+                const timeEl = document.getElementById('notification-time');
+
+                // Actualizar contenido
+                titleEl.textContent = title;
+                messageEl.textContent = message;
+                timeEl.textContent = new Date().toLocaleTimeString();
+
+                // Actualizar ícono según el tipo
+                const icons = {
+                    approaching: "🔔",
+                    arrived: "📍", 
+                    offline: "⚠️",
+                    default: "🚛"
+                };
+                iconEl.textContent = icons[type] || icons.default;
+
+                // Actualizar clase CSS
+                banner.className = `notification-banner ${type}`;
+                if (this.lastNotification !== title) {
+                    banner.classList.add('new');
+                    setTimeout(() => banner.classList.remove('new'), 500);
+                }
+
+                banner.style.display = 'block';
+                this.lastNotification = title;
+            }
+
+            hideNotification() {
+                const banner = document.getElementById('truck-notification');
+                banner.style.display = 'none';
+            }
+
+            hideTruckStatus() {
+                const statusEl = document.getElementById('truck-status');
+                statusEl.style.display = 'none';
+            }
+
+            distancia(lat1, lon1, lat2, lon2) {
+                const R = 6371000; // Radio de la Tierra en metros
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat / 2) ** 2 + 
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+                    Math.sin(dLon / 2) ** 2;
+                return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            }
+
+            calcularTiempoEstimado(distanciaMetros) {
+                const velocidadPromedio = 20 / 3.6; // 20 km/h en m/s
+                const tiempoSegundos = distanciaMetros / velocidadPromedio;
+                const minutos = Math.round(tiempoSegundos / 60);
+                
+                if (minutos < 1) return "menos de 1 minuto";
+                if (minutos === 1) return "1 minuto";
+                return `${minutos} minutos`;
+            }
+        }
+
+        // Función para resaltar el día actual
+        function resaltarDiaActual() {
+            const hoy = new Date().getDate();
+            const celdas = document.querySelectorAll('.calendario td');
+            
+            celdas.forEach(celda => {
+                if (parseInt(celda.textContent) === hoy) {
+                    celda.classList.add('dia-hoy');
+                }
+            });
+        }
+
+        // Función para mostrar mensaje de recolección
+        function mostrarMensajeRecoleccion() {
+            const hoy = new Date();
+            const diaSemana = hoy.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+            const mensajeEl = document.getElementById('mensaje-recoleccion');
+            
+            const mensajes = {
+                1: "🗑️ ¡Hoy es día de recolección! Saca tu basura antes de las 7:00 AM",
+                3: "🗑️ ¡Hoy es día de recolección! Saca tu basura antes de las 7:00 AM", 
+                5: "🗑️ ¡Hoy es día de recolección! Saca tu basura antes de las 7:00 AM"
+            };
+
+            if (mensajes[diaSemana]) {
+                mensajeEl.innerHTML = `<div style="background: #d4edda; color: #155724; padding: 15px; border-radius: 8px; border: 1px solid #c3e6cb; margin: 20px 0;">
+                    ${mensajes[diaSemana]}
+                </div>`;
+            }
+        }
+
+        // Inicializar cuando la página carga
+        window.addEventListener('DOMContentLoaded', () => {
+            // Inicializar sistema de notificaciones
+            const notificationSystem = new CalendarNotificationSystem();
+            
+            // Resaltar día actual
+            resaltarDiaActual();
+            
+            // Mostrar mensaje de recolección si corresponde
+            mostrarMensajeRecoleccion();
+            
+            console.log("Sistema de notificaciones del calendario inicializado");
+        });
+    </script>
 </body>
 </html>
