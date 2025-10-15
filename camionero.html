@@ -1,12 +1,176 @@
-<!-- camionero.html-->
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Panel del Camionero</title>
-  <link rel="stylesheet" href="assets/css/style.css"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 1rem;
+    }
+    
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #667eea;
+    }
+    
+    main {
+      flex: 1;
+      padding: 2rem 1rem;
+      max-width: 600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+    
+    .panel {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+    
+    h2 {
+      color: #333;
+      margin-bottom: 0.5rem;
+      font-size: 1.8rem;
+    }
+    
+    p {
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      color: #333;
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+    
+    select {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+      background: white;
+    }
+    
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 1rem;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-submit {
+      background: #667eea;
+      color: white;
+      width: auto;
+      padding: 0.75rem 1.5rem;
+    }
+    
+    .btn-submit:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-toggle-ubicacion {
+      background: #4CAF50;
+      color: white;
+      margin-top: 1rem;
+    }
+    
+    .btn-toggle-ubicacion:hover {
+      background: #45a049;
+    }
+    
+    .btn-toggle-ubicacion.active {
+      background: #f44336;
+    }
+    
+    .btn-toggle-ubicacion.active:hover {
+      background: #da190b;
+    }
+    
+    .btn-toggle-ubicacion:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .status {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 8px;
+      background: #f0f0f0;
+      display: none;
+    }
+    
+    .status.active {
+      display: block;
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .info-box {
+      background: #e3f2fd;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid #2196F3;
+    }
+
+    .info-box strong {
+      color: #1976D2;
+    }
+    
+    footer {
+      background: rgba(255, 255, 255, 0.95);
+      text-align: center;
+      padding: 1rem;
+      color: #666;
+    }
+  </style>
 
   <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
@@ -30,17 +194,43 @@
   <header>
     <nav>
       <div class="nav-container">
+        <div class="logo">🚛 Panel Camionero</div>
         <button onclick="logout()" class="btn-submit">Cerrar Sesión</button>
       </div>
     </nav>
   </header>
 
-  <main style="padding:1rem">
-    <h2 id="camionero-nombre">Bienvenido, Camionero</h2>
-    <p>Pulsa el botón para compartir tu ubicación en tiempo real.</p>
-    <button id="btn-ubicacion" class="btn-toggle-ubicacion" data-tracking="false">
-      Activar Ubicación
-    </button>
+  <main>
+    <div class="panel">
+      <h2 id="camionero-nombre">Bienvenido, Camionero</h2>
+      <p>Selecciona tu camión y activa la ubicación en tiempo real.</p>
+      
+      <div class="info-box">
+        <strong>ℹ️ Importante:</strong> Tu ubicación se compartirá en tiempo real con los usuarios de la app. 
+        Asegúrate de seleccionar el camión correcto antes de activar.
+      </div>
+
+      <div class="form-group">
+        <label for="select-camion">🚚 Selecciona tu camión:</label>
+        <select id="select-camion">
+          <option value="">-- Seleccionar camión --</option>
+          <option value="camionero1">🚛 Camión 1</option>
+          <option value="camionero2">🚚 Camión 2</option>
+          <option value="camionero3">🚙 Camión 3</option>
+          <option value="camionero4">🚐 Camión 4</option>
+          <option value="camionero5">🚕 Camión 5</option>
+        </select>
+      </div>
+
+      <button id="btn-ubicacion" class="btn-toggle-ubicacion" data-tracking="false" disabled>
+        Selecciona un camión primero
+      </button>
+
+      <div id="status" class="status">
+        <strong>📍 Estado:</strong> <span id="status-text">Inactivo</span><br>
+        <small id="coords-text"></small>
+      </div>
+    </div>
   </main>
 
   <footer>
@@ -48,61 +238,177 @@
   </footer>
 
   <script>
-    // Si tienes login, carga el nombre; si no, elimina estas líneas
+    // Cargar nombre del usuario si existe
     const usuario = JSON.parse(localStorage.getItem('usuarioActivo')||'{}');
     if (usuario.nombre) {
       document.getElementById('camionero-nombre').innerText = `Bienvenido, ${usuario.nombre}`;
     }
 
+    const selectCamion = document.getElementById('select-camion');
     const btn = document.getElementById('btn-ubicacion');
+    const statusDiv = document.getElementById('status');
+    const statusText = document.getElementById('status-text');
+    const coordsText = document.getElementById('coords-text');
     let watchId = null;
+    let camionActual = '';
+
+    // Recuperar camión seleccionado previamente
+    const camionGuardado = localStorage.getItem('camionSeleccionado');
+    if (camionGuardado) {
+      selectCamion.value = camionGuardado;
+      camionActual = camionGuardado;
+      btn.disabled = false;
+      btn.textContent = 'Activar Ubicación';
+    }
+
+    // Habilitar botón cuando se seleccione un camión
+    selectCamion.addEventListener('change', (e) => {
+      camionActual = e.target.value;
+      
+      if (camionActual) {
+        // Guardar selección
+        localStorage.setItem('camionSeleccionado', camionActual);
+        
+        btn.disabled = false;
+        btn.textContent = 'Activar Ubicación';
+        
+        // Si estaba trackeando, detener
+        if (btn.dataset.tracking === 'true') {
+          detenerUbicacion();
+        }
+      } else {
+        localStorage.removeItem('camionSeleccionado');
+        btn.disabled = true;
+        btn.textContent = 'Selecciona un camión primero';
+      }
+    });
 
     btn.addEventListener('click', () => {
       const tracking = btn.dataset.tracking === 'true';
 
       if (!tracking) {
-        if (!navigator.geolocation) {
-          return alert("Tu navegador no soporta geolocalización.");
+        if (!camionActual) {
+          return alert("⚠️ Por favor, selecciona un camión primero.");
         }
-        watchId = navigator.geolocation.watchPosition(pos => {
-          const payload = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-            timestamp: pos.timestamp
-          };
-          db.ref('ubicaciones/camionero1').set(payload)
-            .catch(e => console.error("Error escribiendo en Firebase:", e));
-        }, err => {
-          console.error("watchPosition error:", err);
-          alert("Error obteniendo ubicación: " + err.message);
-        }, {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        });
-
-        btn.dataset.tracking = 'true';
-        btn.textContent = 'Detener Ubicación';
-        btn.classList.add('active');
+        iniciarUbicacion();
       } else {
-        if (watchId !== null) {
-          navigator.geolocation.clearWatch(watchId);
-          watchId = null;
-        }
-        db.ref('ubicaciones/camionero1').remove()
-          .catch(e => console.error("Error borrando en Firebase:", e));
-
-        btn.dataset.tracking = 'false';
-        btn.textContent = 'Activar Ubicación';
-        btn.classList.remove('active');
+        detenerUbicacion();
       }
     });
 
+    function iniciarUbicacion() {
+      if (!navigator.geolocation) {
+        return alert("❌ Tu navegador no soporta geolocalización.");
+      }
+
+      console.log(`📍 Iniciando tracking para ${camionActual}`);
+
+      // watchPosition pedirá permiso solo la primera vez
+      watchId = navigator.geolocation.watchPosition(pos => {
+        const payload = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          timestamp: pos.timestamp,
+          camionId: camionActual
+        };
+        
+        db.ref(`ubicaciones/${camionActual}`).set(payload)
+          .then(() => {
+            console.log(`✅ Ubicación actualizada para ${camionActual}:`, payload);
+            
+            // Actualizar coordenadas en pantalla
+            coordsText.textContent = `Lat: ${pos.coords.latitude.toFixed(6)}, Lng: ${pos.coords.longitude.toFixed(6)}`;
+          })
+          .catch(e => {
+            console.error("❌ Error escribiendo en Firebase:", e);
+            alert("Error al enviar ubicación. Verifica tu conexión.");
+          });
+      }, err => {
+        console.error("❌ watchPosition error:", err);
+        alert("Error obteniendo ubicación: " + err.message);
+        detenerUbicacion();
+      }, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000
+      });
+
+      btn.dataset.tracking = 'true';
+      btn.textContent = 'Detener Ubicación';
+      btn.classList.add('active');
+      selectCamion.disabled = true;
+      
+      statusDiv.classList.add('active');
+      const camionTexto = selectCamion.options[selectCamion.selectedIndex].text;
+      statusText.textContent = `Activo (${camionTexto})`;
+      
+      console.log(`🟢 Tracking activado para ${camionActual}`);
+    }
+
+    function detenerUbicacion() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        console.log('⏸️ Watch position detenido');
+      }
+      
+      if (keepAliveInterval !== null) {
+        clearInterval(keepAliveInterval);
+        keepAliveInterval = null;
+        console.log('⏸️ Keep-alive detenido');
+      }
+      
+      if (camionActual) {
+        db.ref(`ubicaciones/${camionActual}`).remove()
+          .then(() => {
+            console.log(`🗑️ Ubicación eliminada de Firebase para ${camionActual}`);
+          })
+          .catch(e => console.error("❌ Error borrando en Firebase:", e));
+      }
+
+      btn.dataset.tracking = 'false';
+      btn.textContent = 'Activar Ubicación';
+      btn.classList.remove('active');
+      selectCamion.disabled = false;
+      
+      statusDiv.classList.remove('active');
+      statusText.textContent = 'Inactivo';
+      coordsText.textContent = '';
+      
+      console.log('🔴 Tracking detenido');
+    }
+
     function logout() {
+      console.log('👋 Cerrando sesión...');
+      detenerUbicacion();
       localStorage.clear();
       window.location.href = 'login.html';
     }
+
+    // Mantener la página activa incluso en segundo plano
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        console.log('📱 Página en segundo plano - tracking continúa');
+      } else {
+        console.log('👁️ Página visible nuevamente');
+        lastUpdate = Date.now(); // Resetear contador al volver
+      }
+    });
+
+    // Detener tracking al cerrar/recargar página
+    window.addEventListener('beforeunload', () => {
+      if (watchId !== null && camionActual) {
+        console.log('🚪 Página cerrándose, limpiando ubicación...');
+        db.ref(`ubicaciones/${camionActual}`).remove();
+      }
+    });
+
+    // Auto-iniciar si estaba activo previamente (opcional)
+    window.addEventListener('load', () => {
+      console.log('🚀 Página cargada');
+      console.log(`📦 Camión guardado: ${camionGuardado || 'ninguno'}`);
+    });
   </script>
 </body>
 </html>

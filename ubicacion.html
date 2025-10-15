@@ -3,21 +3,79 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ubicación en Tiempo Real - Debug</title>
-  <link rel="stylesheet" href="assets/css/style.css"/>
+  <title>Ubicación en Tiempo Real - Múltiples Camiones</title>
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"
   />
   <style>
-    #mapa-ubicacion {
-      width: 100%;
-      height: 400px;
-      border-radius: 8px;
-      border: 2px solid #2ecc71;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    /* Debug panel */
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+    }
+
+    nav a {
+      text-decoration: none;
+      color: #667eea;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: #764ba2;
+    }
+
+    main {
+      padding: 2rem 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .welcome-section {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    p {
+      color: #666;
+      margin-bottom: 1.5rem;
+    }
+
+    #mapa-ubicacion {
+      width: 100%;
+      height: 500px;
+      border-radius: 8px;
+      border: 2px solid #2ecc71;
+      margin-top: 1rem;
+    }
+
     .debug-panel {
       background: #f8f9fa;
       border: 2px solid #007bff;
@@ -26,6 +84,8 @@
       margin: 15px 0;
       font-family: monospace;
       font-size: 0.85em;
+      max-height: 300px;
+      overflow-y: auto;
     }
 
     .debug-title {
@@ -52,7 +112,65 @@
       border-left-color: #dc3545;
     }
 
-    /* Estilos para el contenedor de notificaciones */
+    .camiones-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+
+    .camion-card {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 1rem;
+      transition: all 0.3s;
+    }
+
+    .camion-card.active {
+      border-color: #4CAF50;
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+    }
+
+    .camion-card.inactive {
+      opacity: 0.6;
+      border-color: #ccc;
+    }
+
+    .camion-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .camion-status {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ccc;
+    }
+
+    .camion-status.active {
+      background: #4CAF50;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .camion-name {
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    .camion-info {
+      font-size: 0.85em;
+      color: #666;
+    }
+
     #alert-container {
       position: fixed;
       top: 20px;
@@ -68,7 +186,6 @@
       margin: 8px 0;
       border-radius: 8px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      font-family: Arial, sans-serif;
       border-left: 4px solid #2e7d32;
       animation: slideIn 0.4s ease-out;
       cursor: pointer;
@@ -132,25 +249,30 @@
       color: white;
     }
 
-    .enable-notifications-btn {
-      background: #2196F3;
-      color: white;
+    .enable-notifications-btn, .test-btn {
       border: none;
       padding: 10px 20px;
       border-radius: 5px;
       cursor: pointer;
       font-size: 0.9em;
       margin-left: 10px;
+      color: white;
+    }
+
+    .enable-notifications-btn {
+      background: #2196F3;
     }
 
     .test-btn {
       background: #ff9800;
-      color: white;
-      border: none;
-      padding: 8px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 10px;
+    }
+
+    footer {
+      background: rgba(255, 255, 255, 0.95);
+      text-align: center;
+      padding: 1rem;
+      color: #666;
+      margin-top: 2rem;
     }
   </style>
 </head>
@@ -168,10 +290,9 @@
 
   <main>
     <section class="welcome-section">
-      <h2>Ubicación en Tiempo Real - Debug Mode 🔍</h2>
-      <p>Visualiza en vivo la posición del camión de basura con información de depuración.</p>
+      <h2>🚛 Ubicación en Tiempo Real - Múltiples Camiones</h2>
+      <p>Visualiza en vivo la posición de todos los camiones recolectores</p>
       
-      <!-- Panel de control de notificaciones -->
       <div class="notification-controls">
         <span>📱 Notificaciones:</span>
         <span id="notification-status" class="notification-status status-disabled">Verificando...</span>
@@ -179,14 +300,12 @@
           Habilitar Notificaciones
         </button>
         <button id="test-notification" class="test-btn">
-          🧪 Probar Notificación
+          🧪 Probar
         </button>
-        <small style="display: block; margin-top: 8px; color: #666;">
-          Recibe alertas cuando el camión se acerque a tu zona
-        </small>
       </div>
 
-      <!-- Panel de debug -->
+      <div class="camiones-panel" id="camiones-panel"></div>
+
       <div class="debug-panel">
         <div class="debug-title">🔍 Información de Debug</div>
         <div id="debug-log"></div>
@@ -200,16 +319,23 @@
     <p>&copy; 2025 Proyecto Basurero. Todos los derechos reservados.</p>
   </footer>
 
-  <!-- Contenedor para notificaciones en pantalla -->
   <div id="alert-container"></div>
 
-  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-database-compat.js"></script>
 
   <script>
+    // Configuración de camiones
+    const CAMIONES_CONFIG = [
+      { id: 'camionero1', nombre: 'Camión 1', color: '#4CAF50', emoji: '🚛' },
+      { id: 'camionero2', nombre: 'Camión 2', color: '#2196F3', emoji: '🚚' },
+      { id: 'camionero3', nombre: 'Camión 3', color: '#FF9800', emoji: '🚙' },
+      { id: 'camionero4', nombre: 'Camión 4', color: '#E91E63', emoji: '🚐' },
+      { id: 'camionero5', nombre: 'Camión 5', color: '#9C27B0', emoji: '🚕' }
+    ];
+
     // Sistema de debug
     class DebugLogger {
       constructor() {
@@ -249,12 +375,12 @@
 
     debugLogger.info("Firebase inicializado correctamente");
 
-    // Sistema de notificaciones mejorado con debug
+    // Sistema de notificaciones
     class NotificationSystem {
       constructor() {
-        this.notified = new Set();
-        this.RADIO_NOTIFICACION = 150; // metros
-        this.RADIO_MUY_CERCA = 50; // metros
+        this.notified = new Map(); // Ahora usa Map para múltiples camiones
+        this.RADIO_NOTIFICACION = 150;
+        this.RADIO_MUY_CERCA = 50;
         this.isEnabled = false;
         this.initUI();
         this.checkBrowserSupport();
@@ -271,26 +397,10 @@
 
       getRutaPoints() {
         return [
-          {
-            coords: [-17.7705396, -63.2099261],
-            nombre: "Plaza Principal",
-            zona: "Centro"
-          },
-          {
-            coords: [-17.7720686, -63.2039419],
-            nombre: "Mercado Municipal", 
-            zona: "Zona Norte"
-          },
-          {
-            coords: [-17.7773053, -63.2055378],
-            nombre: "Barrio San Antonio",
-            zona: "Zona Sur"
-          },
-          {
-            coords: [-17.7774486, -63.2157215],
-            nombre: "Terminal de Buses",
-            zona: "Zona Este"
-          }
+          { coords: [-17.7705396, -63.2099261], nombre: "Plaza Principal", zona: "Centro" },
+          { coords: [-17.7720686, -63.2039419], nombre: "Mercado Municipal", zona: "Zona Norte" },
+          { coords: [-17.7773053, -63.2055378], nombre: "Barrio San Antonio", zona: "Zona Sur" },
+          { coords: [-17.7774486, -63.2157215], nombre: "Terminal de Buses", zona: "Zona Este" }
         ];
       }
 
@@ -299,16 +409,13 @@
         const enableBtn = document.getElementById('enable-notifications');
         const testBtn = document.getElementById('test-notification');
         
-        // Verificar estado inicial
         this.updateNotificationStatus();
         
-        // Botón para habilitar notificaciones
         enableBtn.addEventListener('click', () => {
           debugLogger.info("👆 Usuario hizo clic en 'Habilitar Notificaciones'");
           this.requestPermission();
         });
 
-        // Botón de prueba
         testBtn.addEventListener('click', () => {
           debugLogger.info("🧪 Probando notificación...");
           this.showNotification("🧪 Notificación de Prueba", "¡Las notificaciones están funcionando!");
@@ -319,44 +426,28 @@
         debugLogger.info("🔔 Solicitando permisos de notificación...");
         
         if (!("Notification" in window)) {
-          debugLogger.error("❌ Notificaciones no soportadas en este navegador");
+          debugLogger.error("❌ Notificaciones no soportadas");
           this.showAlert("⚠️ Notificaciones no soportadas", 
                         "Tu navegador no soporta notificaciones", "warning");
           return false;
         }
 
-        debugLogger.info(`📋 Estado actual de permisos: ${Notification.permission}`);
-
         if (Notification.permission === "granted") {
           debugLogger.info("✅ Permisos ya concedidos");
           this.isEnabled = true;
           this.updateNotificationStatus();
-          this.showAlert("✅ Notificaciones ya activas", 
-                        "Las notificaciones ya estaban habilitadas", "arrival");
           return true;
         }
 
-        if (Notification.permission === "denied") {
-          debugLogger.error("❌ Permisos denegados por el usuario");
-          this.showAlert("❌ Notificaciones bloqueadas", 
-                        "Habilita las notificaciones en la configuración del navegador", "warning");
-          return false;
-        }
-
         try {
-          debugLogger.info("⏳ Esperando respuesta del usuario...");
           const permission = await Notification.requestPermission();
-          debugLogger.info(`📝 Respuesta del usuario: ${permission}`);
-          
           this.isEnabled = permission === "granted";
           this.updateNotificationStatus();
           
           if (this.isEnabled) {
             debugLogger.info("🎉 ¡Notificaciones habilitadas con éxito!");
             this.showAlert("✅ Notificaciones activadas", 
-                          "Ahora recibirás alertas del camión recolector", "arrival");
-          } else {
-            debugLogger.warning("⚠️ Usuario rechazó los permisos");
+                          "Ahora recibirás alertas de los camiones", "arrival");
           }
           
           return this.isEnabled;
@@ -375,13 +466,11 @@
           statusEl.className = "notification-status status-enabled";
           enableBtn.style.display = "none";
           this.isEnabled = true;
-          debugLogger.info("🟢 Estado UI: Notificaciones habilitadas");
         } else {
           statusEl.textContent = "Deshabilitadas";
           statusEl.className = "notification-status status-disabled";
           enableBtn.style.display = "inline-block";
           this.isEnabled = false;
-          debugLogger.warning("🔴 Estado UI: Notificaciones deshabilitadas");
         }
       }
 
@@ -396,7 +485,7 @@
       }
 
       calcularTiempoEstimado(distanciaMetros) {
-        const velocidadPromedio = 20 / 3.6; // 20 km/h en m/s
+        const velocidadPromedio = 20 / 3.6;
         const tiempoSegundos = distanciaMetros / velocidadPromedio;
         const minutos = Math.round(tiempoSegundos / 60);
         
@@ -406,43 +495,29 @@
       }
 
       showNotification(titulo, mensaje) {
-        debugLogger.info(`📧 Intentando mostrar notificación: "${titulo}"`);
-        
-        // Intentar notificación del navegador
         if (this.isEnabled && Notification.permission === "granted") {
           try {
             const notification = new Notification(titulo, {
               body: mensaje,
-              icon: "assets/images/camion.png",
-              badge: "assets/images/badge.png",
               tag: "basurero-notif",
-              requireInteraction: false,
-              silent: false
+              requireInteraction: false
             });
-
-            debugLogger.info("🎯 Notificación del navegador enviada exitosamente");
 
             setTimeout(() => notification.close(), 5000);
             
             notification.onclick = function() {
-              debugLogger.info("👆 Usuario hizo clic en la notificación");
               window.focus();
               this.close();
             };
           } catch (error) {
             debugLogger.error(`💥 Error creando notificación: ${error.message}`);
           }
-        } else {
-          debugLogger.warning("⚠️ Notificaciones del navegador no disponibles, usando fallback");
         }
         
-        // Siempre mostrar alerta en pantalla como backup
         this.showAlert(titulo, mensaje);
       }
 
       showAlert(titulo, mensaje, type = 'default') {
-        debugLogger.info(`💬 Mostrando alerta en pantalla: "${titulo}"`);
-        
         const alertContainer = document.getElementById('alert-container');
         const alert = document.createElement('div');
         
@@ -471,61 +546,155 @@
         }, 5000);
       }
 
-      checkProximity(lat, lng) {
+      checkProximity(camionId, camionNombre, lat, lng) {
+        if (!this.notified.has(camionId)) {
+          this.notified.set(camionId, new Set());
+        }
+        
+        const camionNotifications = this.notified.get(camionId);
         const puntos = this.getRutaPoints();
-        debugLogger.info(`📍 Verificando proximidad en: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
         
         puntos.forEach((punto, idx) => {
           const distanciaActual = this.distancia(lat, lng, punto.coords[0], punto.coords[1]);
           const puntoId = `punto-${idx}`;
 
-          debugLogger.info(`📏 Distancia a ${punto.nombre}: ${Math.round(distanciaActual)}m`);
-
-          // Notificación de aproximación (150m)
-          if (distanciaActual <= this.RADIO_NOTIFICACION && !this.notified.has(puntoId)) {
+          if (distanciaActual <= this.RADIO_NOTIFICACION && !camionNotifications.has(puntoId)) {
             const tiempoEstimado = this.calcularTiempoEstimado(distanciaActual);
             
-            debugLogger.info(`🔔 ¡DISPARANDO notificación de aproximación para ${punto.nombre}!`);
-            
             this.showNotification(
-              `🔔 Camión Aproximándose`,
-              `Se acerca a ${punto.nombre} (${punto.zona}) en aproximadamente ${tiempoEstimado}`
+              `🔔 ${camionNombre} Aproximándose`,
+              `Se acerca a ${punto.nombre} (${punto.zona}) en ${tiempoEstimado}`
             );
             
-            this.notified.add(puntoId);
+            camionNotifications.add(puntoId);
           }
 
-          // Notificación de llegada (50m)
-          if (distanciaActual <= this.RADIO_MUY_CERCA && !this.notified.has(`${puntoId}-llegada`)) {
-            debugLogger.info(`📍 ¡DISPARANDO notificación de llegada para ${punto.nombre}!`);
-            
+          if (distanciaActual <= this.RADIO_MUY_CERCA && !camionNotifications.has(`${puntoId}-llegada`)) {
             this.showNotification(
-              `📍 Camión en el Punto`,
-              `¡El camión está en ${punto.nombre}! Es momento de sacar la basura`
+              `📍 ${camionNombre} en el Punto`,
+              `¡El ${camionNombre} está en ${punto.nombre}!`
             );
-            this.notified.add(`${puntoId}-llegada`);
+            camionNotifications.add(`${puntoId}-llegada`);
           }
 
-          // Limpiar notificaciones si se aleja mucho
           if (distanciaActual > this.RADIO_NOTIFICACION * 2) {
-            if (this.notified.has(puntoId) || this.notified.has(`${puntoId}-llegada`)) {
-              debugLogger.info(`🧹 Limpiando notificaciones para ${punto.nombre}`);
-              this.notified.delete(puntoId);
-              this.notified.delete(`${puntoId}-llegada`);
-            }
+            camionNotifications.delete(puntoId);
+            camionNotifications.delete(`${puntoId}-llegada`);
           }
         });
       }
     }
 
-    // Inicialización cuando la página carga
+    // Gestión de camiones
+    class CamionManager {
+      constructor(map, notificationSystem) {
+        this.map = map;
+        this.notificationSystem = notificationSystem;
+        this.markers = new Map();
+        this.listeners = new Map();
+        this.camionesActivos = new Set();
+        this.initCamionesPanel();
+        this.initCamiones();
+      }
+
+      initCamionesPanel() {
+        const panel = document.getElementById('camiones-panel');
+        CAMIONES_CONFIG.forEach(camion => {
+          const card = document.createElement('div');
+          card.className = 'camion-card inactive';
+          card.id = `card-${camion.id}`;
+          card.innerHTML = `
+            <div class="camion-header">
+              <div class="camion-status" id="status-${camion.id}"></div>
+              <div class="camion-name">${camion.emoji} ${camion.nombre}</div>
+            </div>
+            <div class="camion-info" id="info-${camion.id}">Sin conexión</div>
+          `;
+          panel.appendChild(card);
+        });
+      }
+
+      initCamiones() {
+        CAMIONES_CONFIG.forEach(camion => {
+          this.subscribeToCamion(camion);
+        });
+      }
+
+      subscribeToCamion(camion) {
+        const ref = db.ref(`ubicaciones/${camion.id}`);
+        
+        const listener = ref.on('value', snap => {
+          const data = snap.val();
+          
+          if (!data || typeof data.lat !== 'number' || typeof data.lng !== 'number') {
+            this.removeCamion(camion.id);
+            this.updateCard(camion.id, false, "Sin conexión");
+            return;
+          }
+          
+          const { lat, lng } = data;
+          this.updateCamion(camion, lat, lng);
+          this.notificationSystem.checkProximity(camion.id, camion.nombre, lat, lng);
+          this.updateCard(camion.id, true, `Activo (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+          
+          if (!this.camionesActivos.has(camion.id)) {
+            this.camionesActivos.add(camion.id);
+            debugLogger.info(`✅ ${camion.nombre} conectado`);
+          }
+        });
+        
+        this.listeners.set(camion.id, listener);
+      }
+
+      updateCamion(camion, lat, lng) {
+        if (!this.markers.has(camion.id)) {
+          const marker = L.marker([lat, lng], {
+            icon: L.divIcon({
+              html: `<div style="font-size:30px;">${camion.emoji}</div>`,
+              className: '',
+              iconSize: [30, 30],
+              iconAnchor: [15, 15]
+            })
+          }).addTo(this.map);
+          
+          marker.bindPopup(`<strong>${camion.nombre}</strong><br>En movimiento`);
+          this.markers.set(camion.id, marker);
+        } else {
+          this.markers.get(camion.id).setLatLng([lat, lng]);
+        }
+      }
+
+      removeCamion(camionId) {
+        if (this.markers.has(camionId)) {
+          this.map.removeLayer(this.markers.get(camionId));
+          this.markers.delete(camionId);
+        }
+        this.camionesActivos.delete(camionId);
+      }
+
+      updateCard(camionId, active, info) {
+        const card = document.getElementById(`card-${camionId}`);
+        const status = document.getElementById(`status-${camionId}`);
+        const infoEl = document.getElementById(`info-${camionId}`);
+        
+        if (card) {
+          card.className = active ? 'camion-card active' : 'camion-card inactive';
+        }
+        if (status) {
+          status.className = active ? 'camion-status active' : 'camion-status';
+        }
+        if (infoEl) {
+          infoEl.textContent = info;
+        }
+      }
+    }
+
+    // Inicialización
     window.addEventListener('DOMContentLoaded', () => {
-      debugLogger.info("🚀 Inicializando aplicación...");
+      debugLogger.info("🚀 Inicializando aplicación con múltiples camiones...");
       
-      // Inicializar sistema de notificaciones
       const notificationSystem = new NotificationSystem();
       
-      // Definir la ruta
       const rutaCoords = [
         [-17.7705396, -63.2099261],
         [-17.7720686, -63.2039419],
@@ -533,36 +702,18 @@
         [-17.7774486, -63.2157215]
       ];
       
-      const rutaLine = turf.lineString(
-        rutaCoords.map(([lat, lng]) => [lng, lat])
-      );
-
-      // Configuración
-      const ROUTE_THRESHOLD = 30;
-      const IDLE_TIMEOUT_MS = 5000;
-
-      // Inicializar mapa
-      debugLogger.info("🗺️ Inicializando mapa...");
       const map = L.map('mapa-ubicacion').setView(rutaCoords[0], 14);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
       }).addTo(map);
 
-      // Dibujar ruta
       L.polyline(rutaCoords, { color:'red', weight:4, opacity:0.8 }).addTo(map);
       
-      // Agregar marcadores de puntos con círculos de notificación
       const puntos = notificationSystem.getRutaPoints();
       puntos.forEach((punto, i) => {
-        // Marcador del punto
         L.marker(punto.coords).addTo(map)
-          .bindPopup(`
-            <strong>${punto.nombre}</strong><br>
-            <em>${punto.zona}</em><br>
-            <small>Punto ${i + 1} de la ruta</small>
-          `);
+          .bindPopup(`<strong>${punto.nombre}</strong><br><em>${punto.zona}</em>`);
 
-        // Círculo de notificación
         L.circle(punto.coords, {
           color: 'orange',
           fillColor: '#ff7800',
@@ -571,82 +722,8 @@
         }).addTo(map);
       });
 
-      let marker = null;
-      let idleTimer = null;
-      let isFirstLocation = true;
-
-      function showStationary(lat, lng) {
-        const pt = turf.point([lng, lat]);
-        const dist = turf.pointToLineDistance(pt, rutaLine, { units:'meters' });
-        const text = dist <= ROUTE_THRESHOLD
-          ? "🚚 Camión en ruta"
-          : "⚠️ Fuera de ruta";
-        if (marker) {
-          marker.getPopup().setContent(text);
-          marker.openPopup();
-        }
-      }
-
-      // Suscripción a Firebase con notificaciones
-      debugLogger.info("📡 Conectando con Firebase...");
+      new CamionManager(map, notificationSystem);
       
-      db.ref('ubicaciones/camionero1').on('value', snap => {
-        debugLogger.info("📨 Recibidos datos de Firebase");
-        
-        const d = snap.val();
-        if (!d || typeof d.lat !== 'number' || typeof d.lng !== 'number') {
-          debugLogger.warning("⚠️ Datos inválidos recibidos de Firebase");
-          if (marker) {
-            map.removeLayer(marker);
-            marker = null;
-          }
-          return;
-        }
-        
-        const { lat, lng } = d;
-        debugLogger.info(`📍 Nueva posición recibida: ${lat}, ${lng}`);
-
-        // Verificar proximidad para notificaciones
-        notificationSystem.checkProximity(lat, lng);
-
-        // Crear marcador la primera vez
-        if (!marker) {
-          marker = L.marker([lat, lng], {
-            icon: L.icon({
-              iconUrl: 'assets/images/camion.png',
-              iconSize: [35,35],
-              iconAnchor: [17,35]
-            })
-          }).addTo(map).bindPopup("");
-          
-          // Notificación inicial
-          if (isFirstLocation) {
-            debugLogger.info("🚛 Primera ubicación recibida, enviando notificación inicial");
-            notificationSystem.showNotification(
-              "🚛 Camión en Ruta",
-              "El camión recolector ha iniciado su recorrido"
-            );
-            isFirstLocation = false;
-          }
-        }
-
-        // Actualizar posición
-        marker.setLatLng([lat, lng]);
-        map.setView([lat, lng], 15);
-
-        // Mostrar estado en movimiento
-        marker.getPopup().setContent("🚚 Camión en movimiento");
-        marker.openPopup();
-
-        // Reiniciar temporizador para estado estacionario
-        clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-          showStationary(lat, lng);
-        }, IDLE_TIMEOUT_MS);
-      }, err => {
-        debugLogger.error(`💥 Error leyendo Firebase: ${err.message}`);
-      });
-
       debugLogger.info("✅ Aplicación inicializada correctamente");
     });
   </script>
