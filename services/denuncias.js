@@ -321,13 +321,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       // Crear nueva denuncia
-      const nuevaDenuncia = {
-        titulo: titulo.value.trim(),
-        descripcion: descripcion.value.trim(),
-        fotos: fotosSeleccionadas.map(foto => foto.data),
-        aprobada: false,
-        fecha: new Date().toISOString()
-      };
+const nuevaDenuncia = {
+  titulo: titulo.value.trim(),
+  descripcion: descripcion.value.trim(),
+  fotos: fotosSeleccionadas.map(foto => foto.data),
+  aprobada: false,
+  timestamp: Date.now(),
+  fecha: new Date().toISOString() // Mantener para mostrar
+};
 
       // Guardar en Firebase usando push (genera ID automático)
       await push(denunciasRef, nuevaDenuncia);
