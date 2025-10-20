@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Demo Control de Camiones</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 1rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .header-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #667eea;
+    }
+
+    .mode-badge {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    main {
+      flex: 1;
+      padding: 1rem;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 1rem;
+    }
+
+    .control-panel {
+      background: white;
+      border-radius: 15px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      height: fit-content;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+    }
+
+    .map-container {
+      background: white;
+      border-radius: 15px;
+      padding: 1rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      position: relative;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+    }
+
+    .instructions {
+      background: #e3f2fd;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+      border-left: 4px solid #2196F3;
+      font-size: 0.9rem;
+    }
+
+    .instructions strong {
+      color: #1976D2;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    .instructions ul {
+      margin-left: 1.2rem;
+      line-height: 1.6;
+    }
+
+    .camion-control {
+      background: #f8f9fa;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      transition: all 0.3s;
+    }
+
+    .camion-control.active {
+      border-color: #4CAF50;
+      background: #e8f5e9;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);
+    }
+
+    .camion-control.selected {
+      border-color: #2196F3;
+      background: #e3f2fd;
+      box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+    }
+
+    .camion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.8rem;
+    }
+
+    .camion-info {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .camion-emoji {
+      font-size: 1.5rem;
+    }
+
+    .camion-name {
+      font-weight: bold;
+      font-size: 1rem;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 26px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(24px);
+    }
+
+    .camion-status {
+      font-size: 0.85rem;
+      color: #666;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ccc;
+    }
+
+    .status-dot.active {
+      background: #4CAF50;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .coords-display {
+      font-size: 0.75rem;
+      color: #666;
+      font-family: 'Courier New', monospace;
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: white;
+      border-radius: 5px;
+    }
+
+    .select-button {
+      width: 100%;
+      padding: 0.5rem;
+      border: none;
+      border-radius: 5px;
+      background: #2196F3;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: all 0.3s;
+    }
+
+    .select-button:hover {
+      background: #1976D2;
+      transform: translateY(-2px);
+    }
+
+    .select-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 0.7rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 0.9rem;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #da190b;
+      transform: translateY(-2px);
+    }
+
+    #mapa-demo {
+      width: 100%;
+      height: calc(100vh - 140px);
+      border-radius: 8px;
+      border: 2px solid #ddd;
+      cursor: crosshair;
+    }
+
+    .map-hint {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(33, 150, 243, 0.95);
+      color: white;
+      padding: 0.8rem 1.5rem;
+      border-radius: 25px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      z-index: 1000;
+      pointer-events: none;
+      animation: fadeInBounce 0.5s;
+    }
+
+    @keyframes fadeInBounce {
+      0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+      100% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    .stats {
+      background: #f8f9fa;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .stats-label {
+      color: #666;
+    }
+
+    .stats-value {
+      font-weight: bold;
+      color: #333;
+    }
+
+    footer {
+      background: rgba(255, 255, 255, 0.95);
+      text-align: center;
+      padding: 1rem;
+      color: #666;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .control-panel {
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div class="logo">🎮 Control Demo - Simulador de Camiones</div>
+      <div class="mode-badge">🧪 MODO PRUEBA</div>
+    </div>
+  </header>
+
+  <main>
+    <div class="control-panel">
+      <h2>🎛️ Panel de Control</h2>
+      
+      <div class="instructions">
+        <strong>📋 Instrucciones:</strong>
+        <ul>
+          <li>Activa los camiones con el interruptor</li>
+          <li>Selecciona un camión</li>
+          <li>Haz clic en el mapa para moverlo</li>
+        </ul>
+      </div>
+
+      <div id="camiones-list"></div>
+
+      <div class="stats">
+        <div class="stats-row">
+          <span class="stats-label">Camiones activos:</span>
+          <span class="stats-value" id="stats-active">0</span>
+        </div>
+        <div class="stats-row">
+          <span class="stats-label">Camión seleccionado:</span>
+          <span class="stats-value" id="stats-selected">Ninguno</span>
+        </div>
+        <div class="stats-row">
+          <span class="stats-label">Última actualización:</span>
+          <span class="stats-value" id="stats-time">--:--:--</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" onclick="activarTodos()">✅ Activar Todos</button>
+        <button class="btn btn-danger" onclick="desactivarTodos()">❌ Desactivar Todos</button>
+      </div>
+    </div>
+
+    <div class="map-container">
+      <div class="map-hint" id="map-hint">👆 Haz clic en el mapa para mover el camión seleccionado</div>
+      <div id="mapa-demo"></div>
+    </div>
+  </main>
+
+  <footer>
+    <p>🎮 Demo Mode | &copy; 2025 Proyecto Basurero</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.9.1/firebase-database-compat.js"></script>
+
+  <script>
+    // Configuración de Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
+      authDomain: "ecocalendario-51a84.firebaseapp.com",
+      databaseURL: "https://ecocalendario-51a84-default-rtdb.firebaseio.com",
+      projectId: "ecocalendario-51a84",
+      storageBucket: "ecocalendario-51a84.appspot.com",
+      messagingSenderId: "276857323066",
+      appId: "1:276857323066:web:99b3f8f2e9d0d471d97f03",
+      measurementId: "G-VXCZYN6WNC"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Configuración de camiones
+    const CAMIONES = [
+      { id: 'camionero1', nombre: 'Camión 1', emoji: '🚛', color: '#4CAF50' },
+      { id: 'camionero2', nombre: 'Camión 2', emoji: '🚚', color: '#2196F3' },
+      { id: 'camionero3', nombre: 'Camión 3', emoji: '🚙', color: '#FF9800' },
+      { id: 'camionero4', nombre: 'Camión 4', emoji: '🚐', color: '#E91E63' },
+      { id: 'camionero5', nombre: 'Camión 5', emoji: '🚕', color: '#9C27B0' }
+    ];
+
+    // Estado de la aplicación
+    const state = {
+      camiones: {},
+      markers: {},
+      selectedCamion: null,
+      map: null
+    };
+
+    // Inicializar camiones
+    CAMIONES.forEach(c => {
+      state.camiones[c.id] = {
+        ...c,
+        active: false,
+        lat: -17.7850,
+        lng: -63.1737
+      };
+    });
+
+    // Inicializar mapa
+    window.addEventListener('DOMContentLoaded', () => {
+      state.map = L.map('mapa-demo').setView([-17.7850, -63.1737], 13);
+      
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(state.map);
+
+      // Click en el mapa para mover camión
+      state.map.on('click', (e) => {
+        if (state.selectedCamion) {
+          moverCamion(state.selectedCamion, e.latlng.lat, e.latlng.lng);
+        } else {
+          mostrarMensaje('⚠️ Selecciona un camión primero');
+        }
+      });
+
+      renderCamiones();
+      updateStats();
+
+      // Ocultar hint después de 5 segundos
+      setTimeout(() => {
+        const hint = document.getElementById('map-hint');
+        if (hint) {
+          hint.style.opacity = '0';
+          hint.style.transition = 'opacity 0.5s';
+          setTimeout(() => hint.remove(), 500);
+        }
+      }, 5000);
+    });
+
+    function renderCamiones() {
+      const container = document.getElementById('camiones-list');
+      container.innerHTML = '';
+
+      CAMIONES.forEach(camion => {
+        const isActive = state.camiones[camion.id].active;
+        const isSelected = state.selectedCamion === camion.id;
+        const coords = state.camiones[camion.id];
+
+        const div = document.createElement('div');
+        div.className = `camion-control ${isActive ? 'active' : ''} ${isSelected ? 'selected' : ''}`;
+        div.innerHTML = `
+          <div class="camion-header">
+            <div class="camion-info">
+              <span class="camion-emoji">${camion.emoji}</span>
+              <span class="camion-name">${camion.nombre}</span>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${isActive ? 'checked' : ''} onchange="toggleCamion('${camion.id}')">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="camion-status">
+            <span class="status-dot ${isActive ? 'active' : ''}"></span>
+            <span>${isActive ? '🟢 Activo' : '⚪ Inactivo'}</span>
+          </div>
+          ${isActive ? `
+            <div class="coords-display">
+              📍 ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}
+            </div>
+            <button class="select-button" onclick="seleccionarCamion('${camion.id}')">
+              ${isSelected ? '✅ Seleccionado' : '🎯 Seleccionar'}
+            </button>
+          ` : ''}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function toggleCamion(camionId) {
+      const camion = state.camiones[camionId];
+      camion.active = !camion.active;
+
+      if (camion.active) {
+        // Activar camión
+        const payload = {
+          lat: camion.lat,
+          lng: camion.lng,
+          accuracy: 10,
+          timestamp: Date.now(),
+          camionId: camionId
+        };
+
+        db.ref(`ubicaciones/${camionId}`).set(payload)
+          .then(() => {
+            console.log(`✅ ${camion.nombre} activado`);
+            crearMarker(camionId);
+            if (!state.selectedCamion) {
+              seleccionarCamion(camionId);
+            }
+          });
+      } else {
+        // Desactivar camión
+        db.ref(`ubicaciones/${camionId}`).remove()
+          .then(() => {
+            console.log(`❌ ${camion.nombre} desactivado`);
+            eliminarMarker(camionId);
+            if (state.selectedCamion === camionId) {
+              state.selectedCamion = null;
+            }
+          });
+      }
+
+      renderCamiones();
+      updateStats();
+    }
+
+    function seleccionarCamion(camionId) {
+      if (!state.camiones[camionId].active) return;
+      
+      state.selectedCamion = camionId;
+      const camion = state.camiones[camionId];
+      
+      // Centrar mapa en el camión
+      state.map.setView([camion.lat, camion.lng], 15);
+      
+      // Abrir popup del marker
+      if (state.markers[camionId]) {
+        state.markers[camionId].openPopup();
+      }
+
+      renderCamiones();
+      updateStats();
+      console.log(`🎯 ${camion.nombre} seleccionado`);
+    }
+
+    function moverCamion(camionId, lat, lng) {
+      const camion = state.camiones[camionId];
+      
+      camion.lat = lat;
+      camion.lng = lng;
+
+      const payload = {
+        lat: lat,
+        lng: lng,
+        accuracy: 10,
+        timestamp: Date.now(),
+        camionId: camionId
+      };
+
+      db.ref(`ubicaciones/${camionId}`).set(payload)
+        .then(() => {
+          console.log(`📍 ${camion.nombre} movido a ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+          actualizarMarker(camionId, lat, lng);
+          renderCamiones();
+          updateStats();
+        });
+    }
+
+    function crearMarker(camionId) {
+      const camion = state.camiones[camionId];
+      
+      const marker = L.marker([camion.lat, camion.lng], {
+        icon: L.divIcon({
+          html: `<div style="font-size:30px;">${camion.emoji}</div>`,
+          className: '',
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        }),
+        draggable: true
+      }).addTo(state.map);
+
+      marker.bindPopup(`<strong>${camion.nombre}</strong><br>Haz clic en el mapa o arrastra`);
+
+      // Permitir arrastrar el marker
+      marker.on('dragend', (e) => {
+        const pos = e.target.getLatLng();
+        moverCamion(camionId, pos.lat, pos.lng);
+      });
+
+      state.markers[camionId] = marker;
+    }
+
+    function actualizarMarker(camionId, lat, lng) {
+      if (state.markers[camionId]) {
+        state.markers[camionId].setLatLng([lat, lng]);
+      }
+    }
+
+    function eliminarMarker(camionId) {
+      if (state.markers[camionId]) {
+        state.map.removeLayer(state.markers[camionId]);
+        delete state.markers[camionId];
+      }
+    }
+
+    function activarTodos() {
+      CAMIONES.forEach(camion => {
+        if (!state.camiones[camion.id].active) {
+          toggleCamion(camion.id);
+        }
+      });
+      mostrarMensaje('✅ Todos los camiones activados');
+    }
+
+    function desactivarTodos() {
+      CAMIONES.forEach(camion => {
+        if (state.camiones[camion.id].active) {
+          toggleCamion(camion.id);
+        }
+      });
+      state.selectedCamion = null;
+      mostrarMensaje('❌ Todos los camiones desactivados');
+    }
+
+    function updateStats() {
+      const activeCount = Object.values(state.camiones).filter(c => c.active).length;
+      document.getElementById('stats-active').textContent = activeCount;
+      
+      const selectedName = state.selectedCamion 
+        ? state.camiones[state.selectedCamion].nombre 
+        : 'Ninguno';
+      document.getElementById('stats-selected').textContent = selectedName;
+      
+      document.getElementById('stats-time').textContent = new Date().toLocaleTimeString();
+    }
+
+    function mostrarMensaje(texto) {
+      const hint = document.createElement('div');
+      hint.className = 'map-hint';
+      hint.textContent = texto;
+      hint.style.top = '80px';
+      document.querySelector('.map-container').appendChild(hint);
+      
+      setTimeout(() => {
+        hint.style.opacity = '0';
+        hint.style.transition = 'opacity 0.5s';
+        setTimeout(() => hint.remove(), 500);
+      }, 2000);
+    }
+  </script>
+</body>
+</html>

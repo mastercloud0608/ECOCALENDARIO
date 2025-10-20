@@ -114,7 +114,7 @@
 
     .camiones-panel {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 1rem;
       margin: 1rem 0;
     }
@@ -169,6 +169,25 @@
     .camion-info {
       font-size: 0.85em;
       color: #666;
+    }
+
+    .estado-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.75em;
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    .estado-en-ruta {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .estado-fuera-ruta {
+      background: #f44336;
+      color: white;
     }
 
     #alert-container {
@@ -284,6 +303,7 @@
         <li><a href="calendario.html">Calendario</a></li>
         <li><a href="noticias.html">Noticias</a></li>
         <li><a href="denuncias.html">Denuncias</a></li>
+        <li><a href="demo.html" style="color: #ff6b6b;">🎮 Demo</a></li>
       </ul>
     </nav>
   </header>
@@ -378,7 +398,7 @@
     // Sistema de notificaciones
     class NotificationSystem {
       constructor() {
-        this.notified = new Map(); // Ahora usa Map para múltiples camiones
+        this.notified = new Map();
         this.RADIO_NOTIFICACION = 150;
         this.RADIO_MUY_CERCA = 50;
         this.isEnabled = false;
@@ -628,25 +648,88 @@
           
           if (!data || typeof data.lat !== 'number' || typeof data.lng !== 'number') {
             this.removeCamion(camion.id);
-            this.updateCard(camion.id, false, "Sin conexión");
+            this.updateCard(camion.id, false, "Sin conexión", null);
             return;
           }
           
           const { lat, lng } = data;
-          this.updateCamion(camion, lat, lng);
+          const estado = this.calcularEstadoCamion(lat, lng);
+          
+          this.updateCamion(camion, lat, lng, estado);
           this.notificationSystem.checkProximity(camion.id, camion.nombre, lat, lng);
-          this.updateCard(camion.id, true, `Activo (${lat.toFixed(4)}, ${lng.toFixed(4)})`);
+          this.updateCard(camion.id, true, `(${lat.toFixed(4)}, ${lng.toFixed(4)})`, estado);
           
           if (!this.camionesActivos.has(camion.id)) {
             this.camionesActivos.add(camion.id);
-            debugLogger.info(`✅ ${camion.nombre} conectado`);
+            debugLogger.info(`✅ ${camion.nombre} conectado - ${estado}`);
           }
         });
         
         this.listeners.set(camion.id, listener);
       }
 
-      updateCamion(camion, lat, lng) {
+      calcularEstadoCamion(lat, lng) {
+        const rutaCoords = [
+          [-17.7705396, -63.2099261],
+          [-17.7720686, -63.2039419],
+          [-17.7773053, -63.2055378],
+          [-17.7774486, -63.2157215]
+        ];
+        
+        const UMBRAL_RUTA = 100; // 100 metros de tolerancia
+        let distanciaMinima = Infinity;
+        
+        // Calcular distancia mínima a cualquier segmento de la ruta
+        for (let i = 0; i < rutaCoords.length - 1; i++) {
+          const distancia = this.distanciaAPuntoLinea(
+            lat, lng,
+            rutaCoords[i][0], rutaCoords[i][1],
+            rutaCoords[i + 1][0], rutaCoords[i + 1][1]
+          );
+          distanciaMinima = Math.min(distanciaMinima, distancia);
+        }
+        
+        if (distanciaMinima <= UMBRAL_RUTA) {
+          return 'En ruta';
+        } else {
+          return 'Fuera de ruta';
+        }
+      }
+
+      distanciaAPuntoLinea(lat, lng, lat1, lng1, lat2, lng2) {
+        // Calcular distancia perpendicular a un segmento de línea
+        const A = lat - lat1;
+        const B = lng - lng1;
+        const C = lat2 - lat1;
+        const D = lng2 - lng1;
+        
+        const dot = A * C + B * D;
+        const lenSq = C * C + D * D;
+        let param = -1;
+        
+        if (lenSq !== 0) param = dot / lenSq;
+        
+        let xx, yy;
+        
+        if (param < 0) {
+          xx = lat1;
+          yy = lng1;
+        } else if (param > 1) {
+          xx = lat2;
+          yy = lng2;
+        } else {
+          xx = lat1 + param * C;
+          yy = lng1 + param * D;
+        }
+        
+        const dx = lat - xx;
+        const dy = lng - yy;
+        
+        // Convertir a metros (aproximado)
+        return Math.sqrt(dx * dx + dy * dy) * 111320;
+      }
+
+      updateCamion(camion, lat, lng, estado) {
         if (!this.markers.has(camion.id)) {
           const marker = L.marker([lat, lng], {
             icon: L.divIcon({
@@ -657,10 +740,12 @@
             })
           }).addTo(this.map);
           
-          marker.bindPopup(`<strong>${camion.nombre}</strong><br>En movimiento`);
+          marker.bindPopup(`<strong>${camion.nombre}</strong><br>${estado}`);
           this.markers.set(camion.id, marker);
         } else {
-          this.markers.get(camion.id).setLatLng([lat, lng]);
+          const marker = this.markers.get(camion.id);
+          marker.setLatLng([lat, lng]);
+          marker.setPopupContent(`<strong>${camion.nombre}</strong><br>${estado}`);
         }
       }
 
@@ -672,7 +757,7 @@
         this.camionesActivos.delete(camionId);
       }
 
-      updateCard(camionId, active, info) {
+      updateCard(camionId, active, coordsInfo, estado) {
         const card = document.getElementById(`card-${camionId}`);
         const status = document.getElementById(`status-${camionId}`);
         const infoEl = document.getElementById(`info-${camionId}`);
@@ -684,7 +769,13 @@
           status.className = active ? 'camion-status active' : 'camion-status';
         }
         if (infoEl) {
-          infoEl.textContent = info;
+          if (active && estado) {
+            const estadoClass = estado === 'En ruta' ? 'estado-en-ruta' : 'estado-fuera-ruta';
+            const estadoIcon = estado === 'En ruta' ? '🟢' : '🔴';
+            infoEl.innerHTML = `<span class="estado-badge ${estadoClass}">${estadoIcon} ${estado}</span> ${coordsInfo}`;
+          } else {
+            infoEl.textContent = coordsInfo || 'Sin conexión';
+          }
         }
       }
     }

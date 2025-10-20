@@ -1,6 +1,30 @@
-// services/admin-denuncias.js
-// Panel de administración con: vista previa (modal), filtro (pendientes/aprobadas/todas), búsqueda,
-// aprobación y eliminación por ID. Compatible con Base64 y con fotos en IndexedDB por ID.
+// services/admin-denuncias.js - Con Firebase
+import { 
+  getDatabase, 
+  ref, 
+  onValue, 
+  update,
+  remove,
+  get
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+
+// Configuración de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
+  authDomain: "ecocalendario-51a84.firebaseapp.com",
+  projectId: "ecocalendario-51a84",
+  storageBucket: "ecocalendario-51a84.firebasestorage.app",
+  messagingSenderId: "276857323066",
+  appId: "1:276857323066:web:99b3f8f2e9d0d471d97f03",
+  measurementId: "G-VXCZYN6WNC",
+  databaseURL: "https://ecocalendario-51a84-default-rtdb.firebaseio.com/"
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const denunciasRef = ref(db, 'denuncias');
 
 // ==== Utilidades DOM ====
 const qs  = (sel, ctx = document) => ctx.querySelector(sel);
@@ -25,100 +49,12 @@ function formatDate(iso) {
   }
 }
 
-// ==== IndexedDB (opcional) ====
-// Soporte de lectura cuando `fotos` son IDs en IndexedDB (store 'fotos')
-function openDB() {
-  return new Promise((res, rej) => {
-    const req = indexedDB.open('denunciasDB', 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains('fotos')) db.createObjectStore('fotos'); // key: fotoId, value: Blob
-    };
-    req.onsuccess = () => res(req.result);
-    req.onerror = () => rej(req.error);
-  });
-}
-async function idbGet(key) {
-  try {
-    const db = await openDB();
-    return new Promise((res, rej) => {
-      const tx = db.transaction('fotos', 'readonly');
-      const req = tx.objectStore('fotos').get(key);
-      req.onsuccess = () => res(req.result || null);
-      req.onerror = () => rej(req.error);
-    });
-  } catch {
-    return null;
-  }
-}
-
-// Determinar cómo obtener el src de una "foto"
-function getIdFromRef(ref) {
-  if (!ref) return null;
-  if (typeof ref === 'string') return ref;
-  if (typeof ref === 'object' && ref.id) return ref.id;
-  return null;
-}
-function isDataOrHttpUrl(str) {
-  return typeof str === 'string' && (/^data:/i.test(str) || /^https?:\/\//i.test(str));
-}
-
-/**
- * Resuelve una referencia de foto:
- * - Si es dataURL/URL: { src, objectUrl:false }
- * - Si parece ID: busca Blob en IDB y devuelve { src:ObjectURL, objectUrl:true } o {src:""} si no existe
- */
-async function resolveFotoSrc(ref) {
-  // Caso 1: string data: o http(s):
-  if (isDataOrHttpUrl(ref)) {
-    return { src: ref, objectUrl: false };
-  }
-  // Caso 2: objeto/string que representa un ID en IDB
-  const id = getIdFromRef(ref);
-  if (id && !isDataOrHttpUrl(id)) {
-    const blob = await idbGet(id);
-    if (blob) {
-      const url = URL.createObjectURL(blob);
-      return { src: url, objectUrl: true };
-    }
-  }
-  return { src: '', objectUrl: false };
-}
-
-// Revocar ObjectURLs de todas las imágenes dentro de un contenedor al limpiar
-function revokeObjectURLs(container) {
-  qsa('img[data-objecturl="1"]', container).forEach(img => {
-    try { URL.revokeObjectURL(img.src); } catch {}
-  });
-}
-
-// ==== Acceso a almacenamiento de denuncias ====
-function getDenuncias() {
-  try {
-    const arr = JSON.parse(localStorage.getItem('denuncias') || '[]');
-    return arr
-      .map(d => ({
-        id: d.id ?? Date.now() + Math.random(),
-        titulo: d.titulo ?? '',
-        descripcion: d.descripcion ?? '',
-        fotos: Array.isArray(d.fotos) ? d.fotos : [],
-        aprobada: !!d.aprobada,
-        fecha: d.fecha ?? new Date().toISOString()
-      }))
-      .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-  } catch {
-    return [];
-  }
-}
-function saveDenuncias(list) {
-  localStorage.setItem('denuncias', JSON.stringify(list));
-}
-
 // ==== Estado global del panel ====
 const state = {
-  filtro: 'pendientes', // 'pendientes' | 'aprobadas' | 'todas'
+  filtro: 'pendientes',
   query: '',
   seleccionadoId: null,
+  denuncias: [] // Cache local de denuncias
 };
 
 // ==== Autorización y boot ====
@@ -133,8 +69,38 @@ document.addEventListener('DOMContentLoaded', () => {
   if (adminNombre) adminNombre.innerText += ` - ${usuario.nombre}`;
 
   bindUI();
-  renderAll();
+  escucharDenuncias();
 });
+
+// ==== Escuchar denuncias en tiempo real ====
+function escucharDenuncias() {
+  onValue(denunciasRef, (snapshot) => {
+    const denunciasObj = snapshot.val();
+    
+    if (!denunciasObj) {
+      state.denuncias = [];
+    } else {
+      // Convertir objeto a array
+      state.denuncias = Object.entries(denunciasObj)
+        .map(([id, data]) => ({
+          id,
+          titulo: data.titulo || '',
+          descripcion: data.descripcion || '',
+          fotos: Array.isArray(data.fotos) ? data.fotos : [],
+          aprobada: !!data.aprobada,
+          timestamp: data.timestamp || Date.now(),
+          fecha: data.fecha || new Date().toISOString()
+        }))
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    }
+    
+    updateCounts();
+    renderList();
+  }, (error) => {
+    console.error('Error al cargar denuncias:', error);
+    mostrarError('Error al cargar las denuncias desde Firebase');
+  });
+}
 
 // ==== Enlaces UI ====
 function bindUI() {
@@ -168,7 +134,7 @@ function bindUI() {
     });
   });
 
-  // Cerrar modales con botones y ESC
+  // Cerrar modales
   qsa('[data-close-modal]').forEach(el => el.addEventListener('click', closeDetailModal));
   qsa('[data-close-img]').forEach(el => el.addEventListener('click', closeImageModal));
   document.addEventListener('keydown', (e) => {
@@ -206,14 +172,9 @@ function bindUI() {
   }
 }
 
-// ==== Render principal ====
-function renderAll() {
-  updateCounts();
-  renderList();
-}
-
+// ==== Actualizar contadores ====
 function updateCounts() {
-  const all = getDenuncias();
+  const all = state.denuncias;
   const pend = all.filter(d => !d.aprobada).length;
   const apr  = all.filter(d => d.aprobada).length;
 
@@ -225,6 +186,7 @@ function updateCounts() {
   if (elT) elT.textContent = all.length;
 }
 
+// ==== Aplicar filtros ====
 function applyFilterAndSearch(list) {
   let filtered = list;
   if (state.filtro === 'pendientes') filtered = filtered.filter(d => !d.aprobada);
@@ -239,36 +201,14 @@ function applyFilterAndSearch(list) {
   return filtered;
 }
 
-// Crea miniaturas asíncronas y las inserta en un contenedor
-async function populateThumbs(fotosRefs, container) {
-  // Revocar URLs anteriores (si re-render)
-  revokeObjectURLs(container);
-  container.innerHTML = '';
-
-  for (let i = 0; i < fotosRefs.length; i++) {
-    const ref = fotosRefs[i];
-    const { src, objectUrl } = await resolveFotoSrc(ref);
-    const img = document.createElement('img');
-    img.alt = 'Miniatura de evidencia';
-    if (src) img.src = src;
-    if (objectUrl) img.setAttribute('data-objecturl', '1');
-    img.addEventListener('click', () => {
-      if (img.src) openImageModal(img.src);
-    });
-    container.appendChild(img);
-  }
-}
-
+// ==== Renderizar lista ====
 function renderList() {
   const grid = qs('#denuncias-grid');
   const empty = qs('#lista-vacia');
   if (!grid) return;
 
-  const all = getDenuncias();
-  const rows = applyFilterAndSearch(all);
+  const rows = applyFilterAndSearch(state.denuncias);
 
-  // Limpiar y revocar URLs previas
-  revokeObjectURLs(grid);
   grid.innerHTML = '';
   if (empty) empty.style.display = rows.length ? 'none' : 'block';
 
@@ -282,11 +222,20 @@ function renderList() {
     const titulo = `<h4>${sanitize(d.titulo)}</h4>`;
     const desc = `<p>${sanitize(d.descripcion).slice(0, 160)}${(d.descripcion || '').length > 160 ? '…' : ''}</p>`;
 
-    // Contenedor de thumbs (máx 3)
+    // Miniaturas de fotos
     const thumbsWrap = document.createElement('div');
     thumbsWrap.className = 'thumbs';
     thumbsWrap.setAttribute('role', 'list');
-    thumbsWrap.setAttribute('aria-label', 'Imágenes de evidencia');
+    if (Array.isArray(d.fotos) && d.fotos.length > 0) {
+      const first3 = d.fotos.slice(0, 3);
+      first3.forEach(foto => {
+        const img = document.createElement('img');
+        img.src = foto;
+        img.alt = 'Evidencia';
+        img.addEventListener('click', () => openImageModal(foto));
+        thumbsWrap.appendChild(img);
+      });
+    }
 
     const actions = document.createElement('div');
     actions.className = 'actions';
@@ -300,15 +249,9 @@ function renderList() {
     card.appendChild(thumbsWrap);
     card.appendChild(actions);
     grid.appendChild(card);
-
-    // Cargar miniaturas asíncronamente
-    if (Array.isArray(d.fotos) && d.fotos.length) {
-      const first3 = d.fotos.slice(0, 3);
-      populateThumbs(first3, thumbsWrap);
-    }
   });
 
-  // Delegación de eventos para acciones
+  // Delegación de eventos
   grid.onclick = (ev) => {
     const card = ev.target.closest('.card');
     if (!card) return;
@@ -324,41 +267,44 @@ function renderList() {
   };
 }
 
-// ==== Acciones ====
-function approveById(id) {
-  const all = getDenuncias();
-  const idx = all.findIndex(d => String(d.id) === String(id));
-  if (idx === -1) return;
+// ==== Acciones sobre denuncias ====
+async function approveById(id) {
+  const den = state.denuncias.find(d => d.id === id);
+  if (!den) return;
 
-  if (all[idx].aprobada) {
+  if (den.aprobada) {
     alert('Esta denuncia ya está aprobada.');
     return;
   }
+  
   if (!confirm('¿Aprobar esta denuncia?')) return;
 
-  all[idx].aprobada = true;
-  saveDenuncias(all);
-  updateCounts();
-  renderList();
+  try {
+    const denunciaRef = ref(db, `denuncias/${id}`);
+    await update(denunciaRef, { aprobada: true });
+    mostrarExito('Denuncia aprobada correctamente');
+  } catch (error) {
+    console.error('Error al aprobar:', error);
+    mostrarError('Error al aprobar la denuncia');
+  }
 }
 
-function deleteById(id) {
-  const all = getDenuncias();
-  const idx = all.findIndex(d => String(d.id) === String(id));
-  if (idx === -1) return;
-
+async function deleteById(id) {
   if (!confirm('¿Eliminar esta denuncia? Esta acción no se puede deshacer.')) return;
 
-  all.splice(idx, 1);
-  saveDenuncias(all);
-  updateCounts();
-  renderList();
+  try {
+    const denunciaRef = ref(db, `denuncias/${id}`);
+    await remove(denunciaRef);
+    mostrarExito('Denuncia eliminada correctamente');
+  } catch (error) {
+    console.error('Error al eliminar:', error);
+    mostrarError('Error al eliminar la denuncia');
+  }
 }
 
 // ==== Modal de detalle ====
-async function openDetailModal(id) {
-  const all = getDenuncias();
-  const den = all.find(d => String(d.id) === String(id));
+function openDetailModal(id) {
+  const den = state.denuncias.find(d => d.id === id);
   if (!den) return;
 
   state.seleccionadoId = den.id;
@@ -369,29 +315,23 @@ async function openDetailModal(id) {
 
   const fotosWrap = qs('#md-fotos');
   if (fotosWrap) {
-    revokeObjectURLs(fotosWrap);
     fotosWrap.innerHTML = '';
     if (Array.isArray(den.fotos) && den.fotos.length) {
-      for (let i = 0; i < den.fotos.length; i++) {
-        const ref = den.fotos[i];
-        const { src, objectUrl } = await resolveFotoSrc(ref);
+      den.fotos.forEach((foto, i) => {
         const img = document.createElement('img');
+        img.src = foto;
         img.alt = `Evidencia ${i + 1}`;
-        if (src) img.src = src;
-        if (objectUrl) img.setAttribute('data-objecturl', '1');
-        img.addEventListener('click', () => {
-          if (img.src) openImageModal(img.src);
-        });
+        img.addEventListener('click', () => openImageModal(foto));
         fotosWrap.appendChild(img);
-      }
+      });
     } else {
       fotosWrap.innerHTML = '<div class="meta">No hay fotos adjuntas.</div>';
     }
   }
 
-  // Configurar botones
   const btnApr = qs('#md-aprobar');
   const btnDel = qs('#md-eliminar');
+  
   if (btnApr) {
     btnApr.style.display = den.aprobada ? 'none' : 'inline-block';
     btnApr.onclick = () => {
@@ -418,10 +358,7 @@ async function openDetailModal(id) {
 function closeDetailModal() {
   const modal = qs('#modal-denuncia');
   if (!modal || !modal.classList.contains('active')) return;
-  // Revocar URLs de imágenes del modal
-  const fotosWrap = qs('#md-fotos');
-  if (fotosWrap) revokeObjectURLs(fotosWrap);
-
+  
   modal.classList.remove('active');
   modal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
@@ -448,3 +385,59 @@ function closeImageModal() {
   img.src = '';
   document.body.style.overflow = '';
 }
+
+// ==== Notificaciones ====
+function mostrarError(mensaje) {
+  mostrarToast(mensaje, 'error');
+}
+
+function mostrarExito(mensaje) {
+  mostrarToast(mensaje, 'success');
+}
+
+function mostrarToast(mensaje, tipo = 'info') {
+  const toast = document.createElement('div');
+  const bgColor = tipo === 'error' ? '#f44336' : tipo === 'success' ? '#4CAF50' : '#2196F3';
+  
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: ${bgColor};
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10001;
+    font-weight: 600;
+    max-width: 350px;
+    word-wrap: break-word;
+    animation: slideInFromRight 0.3s ease-out;
+  `;
+  toast.textContent = mensaje;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOutToRight 0.3s ease-in forwards';
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        document.body.removeChild(toast);
+      }
+    }, 300);
+  }, 4000);
+}
+
+// ==== Estilos CSS ====
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideInFromRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOutToRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);

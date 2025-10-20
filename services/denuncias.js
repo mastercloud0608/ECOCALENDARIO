@@ -1,6 +1,33 @@
 // ===========================
-// 📣 Funcionalidades para Denuncias
+// 📣 Funcionalidades para Denuncias con Firebase
 // ===========================
+
+import { 
+  getDatabase, 
+  ref, 
+  onValue, 
+  push, 
+  set,
+  remove 
+} from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+
+// Configuración de Firebase (la misma que usas para ubicaciones)
+const firebaseConfig = {
+  apiKey: "AIzaSyAh5BW3Yg6pFNfDVynYXcHOiA96G5ZPr2w",
+  authDomain: "ecocalendario-51a84.firebaseapp.com",
+  projectId: "ecocalendario-51a84",
+  storageBucket: "ecocalendario-51a84.firebasestorage.app",
+  messagingSenderId: "276857323066",
+  appId: "1:276857323066:web:99b3f8f2e9d0d471d97f03",
+  measurementId: "G-VXCZYN6WNC",
+  databaseURL: "https://ecocalendario-51a84-default-rtdb.firebaseio.com/"
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const denunciasRef = ref(db, 'denuncias');
 
 document.addEventListener('DOMContentLoaded', () => {
   // Elementos del DOM
@@ -26,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
   init();
 
   function init() {
-    mostrarDenuncias();
+    escucharDenuncias(); // Escuchar cambios en Firebase en tiempo real
     configurarEventListeners();
     configurarDragAndDrop();
   }
@@ -59,30 +86,38 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ===== Mostrar denuncias aprobadas =====
-  function mostrarDenuncias() {
-    try {
-      const todas = JSON.parse(localStorage.getItem('denuncias') || '[]');
-      const aprobadas = todas.filter(d => d.aprobada === true);
-
+  // ===== Escuchar denuncias en tiempo real desde Firebase =====
+  function escucharDenuncias() {
+    onValue(denunciasRef, (snapshot) => {
+      const denunciasObj = snapshot.val();
+      
       // Remover skeletons
       const skeletons = lista.querySelectorAll('.skeleton');
       skeletons.forEach(skeleton => skeleton.remove());
 
-      if (aprobadas.length === 0) {
+      if (!denunciasObj) {
+        mostrarEstadoVacio();
+        return;
+      }
+
+      // Convertir objeto a array y filtrar aprobadas
+      const denunciasArray = Object.entries(denunciasObj)
+        .map(([id, data]) => ({ id, ...data }))
+        .filter(d => d.aprobada === true)
+        .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+      if (denunciasArray.length === 0) {
         mostrarEstadoVacio();
       } else {
         lista.innerHTML = '';
-        aprobadas
-          .sort((a, b) => new Date(b.fecha) - new Date(a.fecha)) // Más recientes primero
-          .forEach((denuncia, index) => {
-            crearElementoDenuncia(denuncia, index);
-          });
+        denunciasArray.forEach((denuncia, index) => {
+          crearElementoDenuncia(denuncia, index);
+        });
       }
-    } catch (error) {
+    }, (error) => {
       console.error('Error al cargar denuncias:', error);
       mostrarError('Error al cargar las denuncias');
-    }
+    });
   }
 
   function mostrarEstadoVacio() {
@@ -127,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const fecha = new Date(fechaStr);
       if (isNaN(fecha.getTime())) {
-        return fechaStr; // Retornar string original si no se puede parsear
+        return fechaStr;
       }
       return fecha.toLocaleDateString('es-ES', {
         year: 'numeric',
@@ -166,13 +201,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function validarArchivo(archivo) {
-    // Validar tipo
     if (!archivo.type.startsWith('image/')) {
       mostrarError(`${archivo.name} no es una imagen válida`);
       return false;
     }
     
-    // Validar tamaño
     if (archivo.size > MAX_FILE_SIZE) {
       mostrarError(`${archivo.name} es muy grande (máximo 5MB)`);
       return false;
@@ -213,38 +246,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Función global para eliminar fotos (accesible desde onclick)
   window.eliminarFoto = function(index) {
     if (index >= 0 && index < fotosSeleccionadas.length) {
       fotosSeleccionadas.splice(index, 1);
       actualizarPreview();
-      
-      // Limpiar el input file para permitir re-seleccionar la misma imagen
       fotosInput.value = '';
     }
   };
 
-  // Función global para abrir modal (accesible desde onclick)
   window.abrirModal = function(src) {
     modal.classList.add('active');
     modalImg.src = src;
     modal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden'; // Prevenir scroll del body
-    
-    // Focus en el botón de cerrar para accesibilidad
+    document.body.style.overflow = 'hidden';
     setTimeout(() => modalClose.focus(), 100);
   };
 
   function cerrarModal() {
     modal.classList.remove('active');
     modal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = ''; // Restaurar scroll
+    document.body.style.overflow = '';
     modalImg.src = '';
   }
 
   // ===== Drag and Drop =====
   function configurarDragAndDrop() {
-    // Prevenir comportamiento por defecto en toda la página
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
       document.addEventListener(eventName, preventDefaults, false);
     });
@@ -254,7 +280,6 @@ document.addEventListener('DOMContentLoaded', () => {
       e.stopPropagation();
     }
 
-    // Efectos visuales para el área de drop
     ['dragenter', 'dragover'].forEach(eventName => {
       fileLabel.addEventListener(eventName, highlight, false);
     });
@@ -271,7 +296,6 @@ document.addEventListener('DOMContentLoaded', () => {
       fileLabel.classList.remove('dragover');
     }
 
-    // Manejar drop
     fileLabel.addEventListener('drop', handleDrop, false);
 
     function handleDrop(e) {
@@ -282,14 +306,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // ===== Envío del formulario =====
-  function manejarEnvioFormulario(e) {
+  async function manejarEnvioFormulario(e) {
     e.preventDefault();
     
     if (!validarFormulario()) {
       return;
     }
     
-    // Mostrar estado de carga
     form.classList.add('loading');
     const submitBtn = form.querySelector('.btn-submit');
     const originalText = submitBtn.innerHTML;
@@ -299,18 +322,15 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Crear nueva denuncia
       const nuevaDenuncia = {
-        id: Date.now(),
         titulo: titulo.value.trim(),
         descripcion: descripcion.value.trim(),
-        fotos: fotosSeleccionadas.map(foto => foto.data), // Solo guardar los datos base64
+        fotos: fotosSeleccionadas.map(foto => foto.data),
         aprobada: false,
         fecha: new Date().toISOString()
       };
 
-      // Guardar en localStorage
-      const denunciasActuales = JSON.parse(localStorage.getItem('denuncias') || '[]');
-      denunciasActuales.push(nuevaDenuncia);
-      localStorage.setItem('denuncias', JSON.stringify(denunciasActuales));
+      // Guardar en Firebase usando push (genera ID automático)
+      await push(denunciasRef, nuevaDenuncia);
 
       // Limpiar formulario
       limpiarFormulario();
@@ -325,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Error al guardar denuncia:', error);
       mostrarError('Error al enviar la denuncia. Por favor, inténtalo de nuevo.');
     } finally {
-      // Restaurar estado del formulario
       form.classList.remove('loading');
       submitBtn.innerHTML = originalText;
       submitBtn.disabled = false;
@@ -335,10 +354,8 @@ document.addEventListener('DOMContentLoaded', () => {
   function validarFormulario() {
     let esValido = true;
     
-    // Limpiar errores previos
     limpiarErrores();
     
-    // Validar título
     if (!titulo.value.trim()) {
       mostrarErrorCampo(titulo, 'El título es obligatorio');
       esValido = false;
@@ -347,7 +364,6 @@ document.addEventListener('DOMContentLoaded', () => {
       esValido = false;
     }
     
-    // Validar descripción
     if (!descripcion.value.trim()) {
       mostrarErrorCampo(descripcion, 'La descripción es obligatoria');
       esValido = false;
@@ -368,7 +384,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     campo.parentNode.appendChild(errorDiv);
     
-    // Remover error al empezar a escribir
     campo.addEventListener('input', function removerError() {
       campo.classList.remove('error');
       const errorMsg = campo.parentNode.querySelector('.error-message');
@@ -401,15 +416,12 @@ document.addEventListener('DOMContentLoaded', () => {
     mensaje.style.display = 'flex';
     mensaje.scrollIntoView({ behavior: 'smooth', block: 'center' });
     
-    // Ocultar mensaje después de 5 segundos
     setTimeout(() => {
       mensaje.style.display = 'none';
     }, 5000);
   }
 
-  // ===== Utilidades =====
   function mostrarError(mensajeError) {
-    // Crear toast de error temporal
     const toast = document.createElement('div');
     toast.style.cssText = `
       position: fixed;
@@ -430,7 +442,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.body.appendChild(toast);
     
-    // Remover después de 4 segundos
     setTimeout(() => {
       toast.style.animation = 'slideOutToRight 0.3s ease-in forwards';
       setTimeout(() => {
@@ -441,60 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4000);
   }
 
-  // ===== Funciones de depuración (solo para desarrollo) =====
-  function agregarFuncionesDevelopment() {
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      // Función para crear denuncias de prueba
-      window.crearDenunciasPrueba = function() {
-        const denunciasPrueba = [
-          {
-            id: Date.now() + 1,
-            titulo: "Basura acumulada en la esquina de la calle principal",
-            descripcion: "Hay una gran cantidad de basura acumulada que no ha sido recogida por varios días. Está generando malos olores y atrayendo insectos.",
-            fotos: [],
-            aprobada: true,
-            fecha: new Date(Date.now() - 86400000).toISOString() // Ayer
-          },
-          {
-            id: Date.now() + 2,
-            titulo: "Contenedor de basura roto",
-            descripcion: "El contenedor ubicado frente al parque está roto y la basura se esparce por toda la acera cuando hay viento.",
-            fotos: [],
-            aprobada: true,
-            fecha: new Date(Date.now() - 172800000).toISOString() // Hace 2 días
-          }
-        ];
-        
-        const actuales = JSON.parse(localStorage.getItem('denuncias') || '[]');
-        const nuevas = [...actuales, ...denunciasPrueba];
-        localStorage.setItem('denuncias', JSON.stringify(nuevas));
-        
-        mostrarDenuncias();
-        console.log('Denuncias de prueba creadas');
-      };
-      
-      // Función para limpiar denuncias
-      window.limpiarDenuncias = function() {
-        localStorage.removeItem('denuncias');
-        mostrarDenuncias();
-        console.log('Denuncias eliminadas');
-      };
-    }
-  }
-
-  // Agregar funciones de desarrollo si estamos en localhost
-  agregarFuncionesDevelopment();
-
-  // ===== Manejo de errores globales =====
-  window.addEventListener('error', (e) => {
-    console.error('Error global capturado:', e.error);
-    // No mostrar errores técnicos al usuario en producción
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      mostrarError(`Error técnico: ${e.message}`);
-    }
-  });
-
-  // ===== Agregar estilos CSS para animaciones de toast =====
+  // ===== Agregar estilos CSS para animaciones =====
   const style = document.createElement('style');
   style.textContent = `
     @keyframes slideInFromRight {
